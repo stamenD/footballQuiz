@@ -50,6 +50,7 @@ public class Client implements AutoCloseable {
             }
         } catch (IOException e) {
             System.err.println("Unsuccessful write command!");
+            e.printStackTrace();
             t.interrupt();
         }
     }
@@ -87,6 +88,7 @@ public class Client implements AutoCloseable {
         try (Client client = new Client(HOSTNAME, SERVER_PORT)) {
         } catch (Exception e) {
             System.err.println("Unsuccessful connection!");
+            e.printStackTrace();
         }
     }
 

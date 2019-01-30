@@ -16,11 +16,12 @@ public class Game {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     public static final int LENGTH_NAME = 5;
     private static final String ALREADY_ANSWERED = "You already answered for this question!";
-    private static final String WELCOME_MESSAGE = "The GAME will start soon! Get ready! :)";
+    private static final String GET_READY_MESSAGE = "The GAME will start soon! Get ready! :)";
     private static final String WIN_MESSAGE = "You WIN!";
     private static final String ERROR_MASSAGE = "Аn error occurred in current game!";
     private static final String LOSE_MESSAGE = "You LOSE!";
     private static final String DRAW_MESSAGE = "DRAW!";
+    private static final String WAITING_MESSAGE = "Waiting a second player!";
     private static final QuestionsGenerator generator = new QuestionsGenerator();
 
     private ByteBuffer commandBuffer;
@@ -37,11 +38,13 @@ public class Game {
     public Game(String nameRoom, Player firstPlayer) {
         this.nameRoom = nameRoom;
         this.firstPlayer = firstPlayer;
+        firstPlayer.setCurrentGame(this);
         this.commandBuffer = ByteBuffer.allocate(1024);
     }
 
     public void setSecondPlayer(Player secondPlayer) {
         this.secondPlayer = secondPlayer;
+        secondPlayer.setCurrentGame(this);
     }
 
     public boolean isFree() {
@@ -94,9 +97,7 @@ public class Game {
     }
 
     public void startGame() {
-        firstPlayer.setCurrentGame(this);
-        secondPlayer.setCurrentGame(this);
-        sendMessageToTwoPlayers(WELCOME_MESSAGE);
+        sendMessageToTwoPlayers(GET_READY_MESSAGE);
         Thread t = new Thread(() -> {
             try {
                 loadQuestions();
@@ -197,6 +198,10 @@ public class Game {
                         answersFromSecondPlayer.add(index + ") " + answer);
                     }
                 }
+            }
+        }else{
+            if(from.equals(firstPlayer)){
+                sendMessageToPlayer(firstPlayer,WAITING_MESSAGE);
             }
         }
     }

@@ -13,7 +13,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public class Server implements AutoCloseable {
 
@@ -82,7 +85,6 @@ public class Server implements AutoCloseable {
 
 
     private void read(SelectionKey key) {
-        System.out.println(true);
         SocketChannel currentSocketChannel = (SocketChannel) key.channel();
         try {
             commandBuffer.clear();
@@ -107,14 +109,26 @@ public class Server implements AutoCloseable {
             }
         } catch (IOException e) {
             System.err.println("Channel is broken! " + currentSocketChannel);
-            try {
-                currentSocketChannel.close();
-            } catch (IOException E) {
-                System.err.println("Unsuccessful close socket!");
-            }
+            clearUserData(currentSocketChannel);
         } catch (RuntimeException e) {
             System.err.println("Socket disconnected! " + currentSocketChannel);
+            e.printStackTrace();
+            clearUserData(currentSocketChannel);
             key.cancel();
+        }
+    }
+
+
+    private void clearUserData(SocketChannel currentSocketChannel) {
+        try {
+            onlineUsers.remove(currentSocketChannel);
+            this.rooms.entrySet()
+                    .removeIf(stringGameEntry ->
+                            stringGameEntry.getValue().getFirstPlayer().getSc().equals(currentSocketChannel) &&
+                                    stringGameEntry.getValue().isFree());
+            currentSocketChannel.close();
+        } catch (IOException E) {
+            System.err.println("Unsuccessful close socket!");
         }
     }
 
@@ -122,35 +136,40 @@ public class Server implements AutoCloseable {
         this.rooms.entrySet().removeIf(stringGameEntry -> stringGameEntry.getValue().isFinished());
     }
 
+
     private Message executeCommand(String receiveMsg, SocketChannel caller) {
-       System.out.print("->>>" + receiveMsg);
+        System.out.print("->>>" + receiveMsg + ".");
         String[] cmdParts = receiveMsg.split("\\s+");
         Message answer = null;
-        String command = cmdParts[0].trim();
-        try {
-            if (command.equalsIgnoreCase("nickname") && cmdParts.length == 2) {
-                answer = ServerExecutorCommand.setNickname(cmdParts, onlineUsers, caller);
-            } else if (onlineUsers.get(caller).getUsername() != null) {
-                if (command.equalsIgnoreCase("create-game") && cmdParts.length == 2) {
-                    answer = ServerExecutorCommand.createGame(cmdParts, onlineUsers, caller, this.rooms);
-                } else if (command.equalsIgnoreCase("join-game")) {
-                    answer = ServerExecutorCommand.joinInGame(cmdParts, onlineUsers, caller, this.rooms);
-                } else if (command.equalsIgnoreCase("list-rooms") && cmdParts.length == 1) {
-                    answer = ServerExecutorCommand.listCurrentGames(this.rooms);
-                } else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
-                    answer = ServerExecutorCommand.showHistoryGames();
+        System.out.println(cmdParts);
+        System.out.println(cmdParts.length);
+        if (cmdParts.length > 0) {
+            String command = cmdParts[0].trim();
+            try {
+                if (command.equalsIgnoreCase("nickname") && cmdParts.length == 2) {
+                    answer = ServerExecutorCommand.setNickname(cmdParts, onlineUsers, caller);
+                } else if (onlineUsers.get(caller).getUsername() != null) {
+                    if (command.equalsIgnoreCase("create-game") && cmdParts.length == 2) {
+                        answer = ServerExecutorCommand.createGame(cmdParts, onlineUsers, caller, this.rooms);
+                    } else if (command.equalsIgnoreCase("join-game")) {
+                        answer = ServerExecutorCommand.joinInGame(cmdParts, onlineUsers, caller, this.rooms);
+                    } else if (command.equalsIgnoreCase("list-rooms") && cmdParts.length == 1) {
+                        answer = ServerExecutorCommand.listCurrentGames(this.rooms);
+                    } else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
+                        answer = ServerExecutorCommand.showHistoryGames();
+                    } else {
+                        answer = new Message("Unknown command", "server");
+                    }
                 } else {
-                    answer = new Message("Unknown command", "server");
+                    throw new NotSetUsername();
                 }
-            } else {
-                throw new NotSetUsername();
+            } catch (NotFoundFreeRoom e) {
+                answer = new Message("There are not free rooms!", "server");
+                return answer;
+            } catch (NotSetUsername e) {
+                answer = new Message("Please set your nickname to continue!", "server");
+                return answer;
             }
-        } catch (NotFoundFreeRoom e) {
-            answer = new Message("There are not free rooms!", "server");
-            return answer;
-        } catch (NotSetUsername e) {
-            answer = new Message("Please set your nickname to continue!", "server");
-            return answer;
         }
         if (answer == null) {
             answer = new Message("Unknown command", "server");
@@ -165,7 +184,7 @@ public class Server implements AutoCloseable {
         selector.close();
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) {
         try (Server es = new Server(SERVER_PORT)) {
             es.start();
         } catch (Exception e) {
