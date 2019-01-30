@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 class RequestSender {
     private static final String API_URL = "https://api.football-data.org/v2/";
     private static final String TOKEN = "af0f8f2906a845aba548a5916e1f8bc5";
-    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final HttpClient CLIENT = HttpClient.newHttpClient();
 
     CompletableFuture<String> getLeagueStanding(String leagueCode) throws Exception {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(
@@ -25,7 +25,7 @@ class RequestSender {
         ))
                 .headers("X-Auth-Token", TOKEN)
                 .build();
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body);
     }
 
@@ -40,7 +40,7 @@ class RequestSender {
                         + "?limit=3"))
                 .headers("X-Auth-Token", TOKEN)
                 .build();
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body);
     }
 

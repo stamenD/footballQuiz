@@ -18,12 +18,12 @@ public class Player {
     }
 
     public String getUsername() {
-            return username;
+        return username;
     }
 
     public String getUsernameFormat() {
         if (username != null && username.length() < LENGTH_NAME)
-            return " "+username + " ".repeat(LENGTH_NAME - username.length());
+            return " " + username + " ".repeat(LENGTH_NAME - username.length());
         else {
             return username;
         }
@@ -37,7 +37,7 @@ public class Player {
         this.currentGame = currentGame;
     }
 
-    public void sendAnswer(String answer){
+    public void sendAnswer(String answer) {
         this.currentGame.getAnswer(this, answer);
     }
 

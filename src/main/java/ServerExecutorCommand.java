@@ -59,7 +59,10 @@ public class ServerExecutorCommand {
                 answer = new Message("There is not room with that name?!", "server");
             }
         } else if (cmdParts.length == 1) {
-            Game pendingGame = games.values().stream().filter(Game::isFree).findFirst().orElseThrow(NotFoundFreeRoom::new);
+            Game pendingGame = games.values().stream()
+                    .filter(Game::isFree)
+                    .findFirst()
+                    .orElseThrow(NotFoundFreeRoom::new);
             games.get(pendingGame.getNameRoom()).setSecondPlayer(onlineUsers.get(caller));
             games.get(pendingGame.getNameRoom()).startGame();
             answer = new Message("Successful join in room!", "server", pendingGame.getNameRoom());

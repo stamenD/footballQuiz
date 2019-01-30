@@ -4,6 +4,7 @@ import CustomExceptions.NotLoadedQuestions;
 import GameComponents.QuestionUtils.Question;
 import GameComponents.QuestionUtils.QuestionsGenerator;
 import Services.IOFile;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
@@ -15,6 +16,10 @@ import java.util.Objects;
 public class Game {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     public static final int LENGTH_NAME = 5;
+    public static final int ANSWER_START_INDEX = 3;
+    public static final int ANSWER_END_INDEX = 4;
+    private static final int BUFFER_SIZE = 1024;
+    private static final int TIME_FOR_THINKING = 6000;
     private static final String ALREADY_ANSWERED = "You already answered for this question!";
     private static final String GET_READY_MESSAGE = "The GAME will start soon! Get ready! :)";
     private static final String WIN_MESSAGE = "You WIN!";
@@ -22,7 +27,7 @@ public class Game {
     private static final String LOSE_MESSAGE = "You LOSE!";
     private static final String DRAW_MESSAGE = "DRAW!";
     private static final String WAITING_MESSAGE = "Waiting a second player!";
-    private static final QuestionsGenerator generator = new QuestionsGenerator();
+    private static final QuestionsGenerator GENERATOR = new QuestionsGenerator();
 
     private ByteBuffer commandBuffer;
     private String nameRoom;
@@ -39,7 +44,7 @@ public class Game {
         this.nameRoom = nameRoom;
         this.firstPlayer = firstPlayer;
         firstPlayer.setCurrentGame(this);
-        this.commandBuffer = ByteBuffer.allocate(1024);
+        this.commandBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     }
 
     public void setSecondPlayer(Player secondPlayer) {
@@ -89,7 +94,7 @@ public class Game {
 
     private void loadQuestions() {
         try {
-            questions = Game.generator.generate();
+            questions = Game.GENERATOR.generate();
         } catch (Exception e) {
             throw new NotLoadedQuestions(e.getMessage());
         }
@@ -110,7 +115,7 @@ public class Game {
                     isOpenToGetAnswers = true;
                     index = index + 1;
                     try {
-                        Thread.sleep(6000);
+                        Thread.sleep(TIME_FOR_THINKING);
                     } catch (InterruptedException e) {
                         System.out.println("Аn error occurred in current game!");
                     }
@@ -119,8 +124,7 @@ public class Game {
             } catch (NotLoadedQuestions e) {
                 System.out.println("Can not load questions!");
                 sendMessageToTwoPlayers(ERROR_MASSAGE);
-            }
-            finally {
+            } finally {
                 firstPlayer.setCurrentGame(null);
                 secondPlayer.setCurrentGame(null);
             }
@@ -160,22 +164,17 @@ public class Game {
     }
 
     private int calculateCorrectAnswers(List<String> answers) {
-        System.out.println("-------------------------------------------------");
         int count = 0;
         int lastCalculate = -1;
         for (String ans : answers) {
-            System.out.println("->>>>" + ans);
             if (Integer.parseInt(ans.substring(0, 1)) - 1 != lastCalculate) {
                 lastCalculate = Integer.parseInt(ans.substring(0, 1)) - 1;
-                System.out.println(ans.substring(3, 4) + ">>>" +
-                        String.valueOf(questions.get(lastCalculate).getCorrectAnswerIndex()));
-                if (ans.substring(3, 4).equals(String.valueOf(questions.get(lastCalculate).getCorrectAnswerIndex()))) {
+                if (ans.substring(ANSWER_START_INDEX, ANSWER_END_INDEX)
+                        .equals(String.valueOf(questions.get(lastCalculate).getCorrectAnswerIndex()))) {
                     count++;
                 }
             }
         }
-        System.out.println("-------------------------------------------------");
-
         return count;
     }
 
@@ -199,9 +198,9 @@ public class Game {
                     }
                 }
             }
-        }else{
-            if(from.equals(firstPlayer)){
-                sendMessageToPlayer(firstPlayer,WAITING_MESSAGE);
+        } else {
+            if (from.equals(firstPlayer)) {
+                sendMessageToPlayer(firstPlayer, WAITING_MESSAGE);
             }
         }
     }

@@ -21,7 +21,7 @@ public class IOFile {
 
     synchronized public static String getAllPlayedGames() {
         try (BufferedReader oi = new BufferedReader(new FileReader(PATH_TO_FILE))) {
-           return oi.lines().collect(Collectors.joining(System.lineSeparator()));
+            return oi.lines().collect(Collectors.joining(System.lineSeparator()));
         } catch (IOException e) {
             e.printStackTrace();
             return "Not available!";

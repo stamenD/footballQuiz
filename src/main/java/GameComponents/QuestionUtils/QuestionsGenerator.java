@@ -8,17 +8,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class QuestionsGenerator {
+    private static final int NUMBER_ANSWERS = 3;
+    private static final List<League> LEAGUE_CODES =
+            List.of(
+                    new League("1. Bundesliga", "BL1"),
+                    new League("Premiere League", "PL"),
+                    new League("Serie A", "SA"),
+                    new League("Primera Division", "PD"),
+                    new League("Ligue 1", "FL1"),
+                    new League("Champions-League", "CL")
+            );
 
-    static private class Player {
+    static private class FootballPlayer {
         String name;
         String team;
         String goals;
         String leaderboardGoal;
 
-        Player() {
+        FootballPlayer() {
         }
 
-        public Player(String name, String team, String goals, String leaderboardGoal) {
+        public FootballPlayer(String name, String team, String goals, String leaderboardGoal) {
             this.name = name;
             this.team = team;
             this.goals = goals;
@@ -27,7 +37,7 @@ public class QuestionsGenerator {
 
         @Override
         public String toString() {
-            return "Player{" +
+            return "FootballPlayer{" +
                     "name='" + name + '\'' +
                     ", team='" + team + '\'' +
                     ", goals='" + goals + '\'' +
@@ -41,7 +51,7 @@ public class QuestionsGenerator {
         String position;
     }
 
-    static private class League{
+    static private class League {
         private String name;
         private String code;
 
@@ -51,18 +61,10 @@ public class QuestionsGenerator {
         }
     }
 
-    private static final List<League> LEAGUE_CODES =
-            List.of(
-                    new League( "1. Bundesliga", "BL1"),
-                    new League( "Premiere League", "PL"),
-                    new League("Serie A", "SA"),
-                    new League( "Primera Division", "PD"),
-                    new League("Ligue 1", "FL1"),
-                    new League("Champions-League", "CL")
-            );
 
 
-    private static Player fetchPlayer(String json, int number) {
+
+    private static FootballPlayer fetchPlayer(String json, int number) {
 //        System.out.println(json);
         Pattern pattern = Pattern.compile("\\[.*\\]");
         Matcher matcher = pattern.matcher(json);
@@ -74,7 +76,7 @@ public class QuestionsGenerator {
 
         String[] players = scorers.split("player");
 //        System.out.println("Position " + number + ":");
-        Player result = new Player();
+        FootballPlayer result = new FootballPlayer();
         result.leaderboardGoal = String.valueOf(number);
         result.name = players[number].split("name\\\":")[1].split(",\\\"")[0];
         result.team = players[number].split("name\\\":")[2].split(",\\\"")[0].split("}")[0];
@@ -104,29 +106,29 @@ public class QuestionsGenerator {
     }
 
     private static Question questionForPlayersTeam(String json) {
-        System.out.println("===========================================");
-        System.out.println(json);
-        System.out.println("===========================================");
-
-        Player result1 = fetchPlayer(json, 1);
-        Player result2 = fetchPlayer(json, 2);
-        Player result3 = fetchPlayer(json, 3);
+        FootballPlayer[] footballers = new FootballPlayer[NUMBER_ANSWERS];
+        for (int i = 0; i < footballers.length; i++) {
+            footballers[i] = fetchPlayer(json, i);
+        }
 
         List<String> answers = new ArrayList<>();
-        answers.add(result1.team);
-        answers.add(result2.team);
-        answers.add(result3.team);
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n").append("В кой отбор играе ").append(result1.name)
-                .append(", който има отбелязани ").append(result1.goals)
+        for (FootballPlayer footballer : footballers
+        ) {
+            answers.add(footballer.team);
+        }
+        StringBuilder content = new StringBuilder();
+
+        int correctAnswerIndex = new Random().nextInt(NUMBER_ANSWERS);
+        content.append("\n").append("В кой отбор играе ").append(footballers[correctAnswerIndex].name)
+                .append(", който има отбелязани ").append(footballers[correctAnswerIndex].goals)
                 .append(" гола през този сезон?");
-        return new Question(sb.toString(), answers, 0);
+        return new Question(content.toString(), answers, correctAnswerIndex);
     }
 
     private static Question questionForPlayersGoalsNumber(String json, String league) {
-        Player result = fetchPlayer(json, new Random().nextInt(3) + 1);
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n").append("Колко отбелязани гола има ")
+        FootballPlayer result = fetchPlayer(json, new Random().nextInt(NUMBER_ANSWERS) + 1);
+        StringBuilder content = new StringBuilder();
+        content.append("\n").append("Колко отбелязани гола има ")
                 .append(result.name)
                 .append(" в ").append(league)
                 .append(" през този сезон?");
@@ -134,28 +136,34 @@ public class QuestionsGenerator {
         answers.add(result.goals);
         answers.add(String.valueOf(Integer.parseInt(result.goals) - 1));
         answers.add(String.valueOf(Integer.parseInt(result.goals) - 2));
-        return new Question(sb.toString(), answers, 0);
+        return new Question(content.toString(), answers, 0);
     }
 
     private static Question questionForLeagueScorers(String json, String league) {
-        Player result1 = fetchPlayer(json, 1);
-        Player result2 = fetchPlayer(json, 2);
-        Player result3 = fetchPlayer(json, 3);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n").append("Кой e голмайсторът на ").append(league).
-                append(" през този сезон в момента?");
+        FootballPlayer[] footballers = new FootballPlayer[NUMBER_ANSWERS];
+        for (int i = 0; i < footballers.length; i++) {
+            footballers[i] = fetchPlayer(json, i);
+        }
+
         List<String> answers = new ArrayList<>();
-        answers.add(result1.name);
-        answers.add(result2.name);
-        answers.add(result3.name);
-        return new Question(sb.toString(), answers, 0);
+        for (FootballPlayer footballer : footballers
+        ) {
+            answers.add(footballer.name);
+        }
+        StringBuilder content = new StringBuilder();
+        content.append("\n").append("Кой e голмайсторът на ")
+                .append(league)
+                .append(" през този сезон в момента?");
+
+        return new Question(content.toString(), answers, 0);
     }
 
     private static Question questionForLeagueLeaderboard(String json, String league) {
-        Team result = fetchTeam(json, new Random().nextInt(3) + 1);
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n").append("На коя позиция в класирането се намира отборът ")
+        Team result = fetchTeam(json, new Random().nextInt(NUMBER_ANSWERS) + 1);
+        StringBuilder content = new StringBuilder();
+        content.append("\n")
+                .append("На коя позиция в класирането се намира отборът ")
                 .append(result.name)
                 .append(" в ")
                 .append(league)
@@ -164,12 +172,12 @@ public class QuestionsGenerator {
         answers.add(result.position);
         answers.add(String.valueOf(Integer.parseInt(result.position) + 1));
         answers.add(String.valueOf(Integer.parseInt(result.position) + 2));
-        return new Question(sb.toString(), answers, 0);
+        return new Question(content.toString(), answers, 0);
     }
 
-    synchronized public List<Question>  generate() throws Exception {
+    synchronized public List<Question> generate() throws Exception {
         RequestSender retriever = new RequestSender();
-        League leagueFirstQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size()-1));
+        League leagueFirstQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size() - 1));
         League leagueSecondQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size()));
 
         List<Question> questions = new ArrayList<>();

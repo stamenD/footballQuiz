@@ -21,6 +21,7 @@ import java.util.Set;
 public class Server implements AutoCloseable {
 
     private static final int SERVER_PORT = 4444;
+    private static final int BUFFER_SIZE = 1024;
 
     private Map<String, Game> rooms;
     private Map<SocketChannel, Player> onlineUsers;
@@ -34,7 +35,7 @@ public class Server implements AutoCloseable {
         rooms = new HashMap<>();
         onlineUsers = new HashMap<>();
 
-        commandBuffer = ByteBuffer.allocate(1024);
+        commandBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
         selector = Selector.open();
 
@@ -184,7 +185,7 @@ public class Server implements AutoCloseable {
         selector.close();
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         try (Server es = new Server(SERVER_PORT)) {
             es.start();
         } catch (Exception e) {

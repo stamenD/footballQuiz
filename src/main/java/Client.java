@@ -12,22 +12,27 @@ import java.util.Set;
 public class Client implements AutoCloseable {
     private static final int SERVER_PORT = 4444;
     private static final String HOSTNAME = "127.0.0.1";
+    private static final int BUFFER_SIZE = 1024;
     private SocketChannel socketChannel;
     private ByteBuffer byteBuffer;
     private Selector selector;
 
-    Client(String hostname, int port) throws IOException {
-        byteBuffer = ByteBuffer.allocate(1024);
+    public Client(String hostname, int port) throws IOException {
+        byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
         selector = Selector.open();
 
         socketChannel = SocketChannel.open();
         socketChannel.connect(new InetSocketAddress(hostname, port));
+        System.out.println("Successful connection!");
+    }
+
+    private void start() throws IOException {
+
         socketChannel.configureBlocking(false);
         socketChannel.register(selector, SelectionKey.OP_READ);
-        System.out.println("Successful connection!");
 
-
+        //start selector works in another thread
         Thread t = new Thread(this::run);
         t.start();
 
@@ -84,14 +89,6 @@ public class Client implements AutoCloseable {
         selector.close();
     }
 
-    public static void main(String[] args) {
-        try (Client client = new Client(HOSTNAME, SERVER_PORT)) {
-        } catch (Exception e) {
-            System.err.println("Unsuccessful connection!");
-            e.printStackTrace();
-        }
-    }
-
     private void run() {
         while (true) {
             if (Thread.interrupted()) {
@@ -128,4 +125,14 @@ public class Client implements AutoCloseable {
         }
 
     }
+
+    public static void main(String[] args) {
+        try (Client client = new Client(HOSTNAME, SERVER_PORT)) {
+            client.start();
+        } catch (Exception e) {
+            System.err.println("Unsuccessful connection!");
+            e.printStackTrace();
+        }
+    }
+
 }
