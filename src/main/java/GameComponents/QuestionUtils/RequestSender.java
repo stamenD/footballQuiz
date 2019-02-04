@@ -8,12 +8,12 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
-class RequestSender {
+public class RequestSender {
     private static final String API_URL = "https://api.football-data.org/v2/";
     private static final String TOKEN = "af0f8f2906a845aba548a5916e1f8bc5";
     private static final HttpClient CLIENT = HttpClient.newHttpClient();
 
-    CompletableFuture<String> getLeagueStanding(String leagueCode) throws Exception {
+    public CompletableFuture<String> getLeagueStanding(String leagueCode) throws Exception {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(
                 API_URL +
                         URLEncoder.encode("competitions", StandardCharsets.UTF_8)
@@ -29,7 +29,7 @@ class RequestSender {
                 .thenApply(HttpResponse::body);
     }
 
-    CompletableFuture<String> getTopScorer(String leagueCode) throws Exception {
+    public CompletableFuture<String> getTopScorer(String leagueCode) throws Exception {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(
                 API_URL +
                         URLEncoder.encode("competitions", StandardCharsets.UTF_8)

@@ -2,7 +2,6 @@ import CustomExceptions.NotFoundFreeRoom;
 import CustomExceptions.NotSetUsername;
 import GameComponents.Game;
 import GameComponents.Player;
-import Utils.Message;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -101,10 +100,10 @@ public class Server implements AutoCloseable {
             if (onlineUsers.get(currentSocketChannel).getCurrentGame() != null) {
                 onlineUsers.get(currentSocketChannel).sendAnswer(message);
             } else {
-                Message result = executeCommand(message, currentSocketChannel);
+                String result = executeCommand(message, currentSocketChannel);
 
                 commandBuffer.clear();
-                commandBuffer.put((result.getMessage() + System.lineSeparator()).getBytes());
+                commandBuffer.put((result + System.lineSeparator()).getBytes());
                 commandBuffer.flip();
                 currentSocketChannel.write(commandBuffer);
             }
@@ -138,10 +137,10 @@ public class Server implements AutoCloseable {
     }
 
 
-    private Message executeCommand(String receiveMsg, SocketChannel caller) {
+    private String executeCommand(String receiveMsg, SocketChannel caller) {
         System.out.print("->>>" + receiveMsg + ".");
         String[] cmdParts = receiveMsg.split("\\s+");
-        Message answer = null;
+        String answer = null;
         System.out.println(cmdParts);
         System.out.println(cmdParts.length);
         if (cmdParts.length > 0) {
@@ -159,21 +158,21 @@ public class Server implements AutoCloseable {
                     } else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
                         answer = ServerExecutorCommand.showHistoryGames();
                     } else {
-                        answer = new Message("Unknown command", "server");
+                        answer = "Unknown command";
                     }
                 } else {
                     throw new NotSetUsername();
                 }
             } catch (NotFoundFreeRoom e) {
-                answer = new Message("There are not free rooms!", "server");
+                answer = "There are not free rooms!";
                 return answer;
             } catch (NotSetUsername e) {
-                answer = new Message("Please set your nickname to continue!", "server");
+                answer = "Please set your nickname to continue!";
                 return answer;
             }
         }
         if (answer == null) {
-            answer = new Message("Unknown command", "server");
+            answer = "Unknown command";
         }
         return answer;
     }

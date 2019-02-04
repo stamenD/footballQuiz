@@ -1,31 +1,85 @@
 package Services;
 
-import java.io.BufferedReader;
+import CustomExceptions.StreamError;
+
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 public class IOFile {
-    private final static String PATH_TO_FILE = "result.txt";
+    private final static String DEFAULT_PATH_TO_FILE = "result.txt";
+    private OutputStream whereToSave;
+    private InputStream fromWhereRead;
 
-    synchronized public static void saveGame(String result) {
-        try (PrintWriter objectStream = new PrintWriter(new FileOutputStream(PATH_TO_FILE, true));) {
-            objectStream.println(result);
-            objectStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+    public IOFile(OutputStream whereToSave, InputStream fromWhereRead) {
+        if (whereToSave != null) {
+            this.whereToSave = whereToSave;
+        }
+        if (fromWhereRead != null) {
+            this.fromWhereRead = fromWhereRead;
         }
     }
 
-    synchronized public static String getAllPlayedGames() {
-        try (BufferedReader oi = new BufferedReader(new FileReader(PATH_TO_FILE))) {
-            return oi.lines().collect(Collectors.joining(System.lineSeparator()));
+    synchronized public void saveGame(String result) {
+        PrintWriter objectStream = null;
+        boolean isOutsideSetStream = false;
+        try {
+            if (whereToSave == null) {
+                whereToSave = new FileOutputStream(DEFAULT_PATH_TO_FILE, true);
+            } else {
+                isOutsideSetStream = true;
+            }
+            objectStream = new PrintWriter(whereToSave);
+            objectStream.println(result);
+            objectStream.flush();
         } catch (IOException e) {
-            e.printStackTrace();
-            return "Not available!";
+            System.out.println("Not open correct stream!");
+            throw new StreamError(e.getMessage());
+        } finally {
+            if (!isOutsideSetStream) {
+                try {
+                    objectStream.close();
+                    whereToSave.close();
+                } catch (IOException e) {
+                    System.out.println("Not close correct stream!");
+                    throw new StreamError(e.getMessage());
+                }
+            }
         }
+    }
+
+    synchronized public String getAllPlayedGames() {
+        boolean isOutsideSetStream = false;
+        BufferedReader bufferedReader = null;
+        try {
+            if (fromWhereRead == null) {
+                fromWhereRead = new FileInputStream(DEFAULT_PATH_TO_FILE);
+            } else {
+                isOutsideSetStream = true;
+            }
+            bufferedReader = new BufferedReader(new InputStreamReader(fromWhereRead));
+            return bufferedReader.lines().collect(Collectors.joining(System.lineSeparator()));
+        } catch (IOException e) {
+            System.out.println("Not open correct stream!");
+            throw new StreamError(e.getMessage());
+        } finally {
+            if (!isOutsideSetStream) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    System.out.println("Not close correct stream!");
+                    throw new StreamError(e.getMessage());
+                }
+            }
+        }
+
+
     }
 
 }

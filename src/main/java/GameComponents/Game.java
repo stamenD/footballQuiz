@@ -1,8 +1,10 @@
 package GameComponents;
 
 import CustomExceptions.NotLoadedQuestions;
+import CustomExceptions.StreamError;
 import GameComponents.QuestionUtils.Question;
 import GameComponents.QuestionUtils.QuestionsGenerator;
+import GameComponents.QuestionUtils.RequestSender;
 import Services.IOFile;
 
 import java.io.IOException;
@@ -94,7 +96,7 @@ public class Game {
 
     private void loadQuestions() {
         try {
-            questions = Game.GENERATOR.generate();
+            questions = Game.GENERATOR.generate(new RequestSender(), -1);
         } catch (Exception e) {
             throw new NotLoadedQuestions(e.getMessage());
         }
@@ -148,8 +150,11 @@ public class Game {
                 second, secondPlayer.getUsername());
 
         sendMessageToTwoPlayers(result);
-        IOFile.saveGame(result);
-
+        try {
+            new IOFile(null, null).saveGame(result);
+        } catch (StreamError e) {
+            System.out.println("Result has not been saved!");
+        }
         if (first > second) {
             sendMessageToPlayer(firstPlayer, WIN_MESSAGE);
             sendMessageToPlayer(secondPlayer, LOSE_MESSAGE);

@@ -19,7 +19,8 @@ public class QuestionsGenerator {
                     new League("Champions-League", "CL")
             );
 
-    static private class FootballPlayer {
+
+    static public class FootballPlayer {
         String name;
         String team;
         String goals;
@@ -46,12 +47,28 @@ public class QuestionsGenerator {
         }
     }
 
-    static private class Team {
+    static public class Team {
+        public Team() {
+        }
+
+        public Team(String name, String position) {
+            this.name = name;
+            this.position = position;
+        }
+
         String name;
         String position;
+
+        @Override
+        public String toString() {
+            return "Team{" +
+                    "name='" + name + '\'' +
+                    ", position='" + position + '\'' +
+                    '}';
+        }
     }
 
-    static private class League {
+    static public class League {
         private String name;
         private String code;
 
@@ -62,10 +79,8 @@ public class QuestionsGenerator {
     }
 
 
-
-
-    private static FootballPlayer fetchPlayer(String json, int number) {
-//        System.out.println(json);
+    public static FootballPlayer fetchPlayer(String json, int number) {
+        //System.out.println(json);
         Pattern pattern = Pattern.compile("\\[.*\\]");
         Matcher matcher = pattern.matcher(json);
         String scorers = "";
@@ -81,10 +96,11 @@ public class QuestionsGenerator {
         result.name = players[number].split("name\\\":")[1].split(",\\\"")[0];
         result.team = players[number].split("name\\\":")[2].split(",\\\"")[0].split("}")[0];
         result.goals = players[number].split("numberOfGoals\\\":")[1].split(",\\\"")[0].split("}")[0];
+        //System.out.println(result);
         return result;
     }
 
-    private static Team fetchTeam(String json, int number) {
+    public static Team fetchTeam(String json, int number) {
         Pattern pattern = Pattern.compile("\\[.*\\]");
         Matcher matcher = pattern.matcher(json);
         String standings = "";
@@ -105,10 +121,11 @@ public class QuestionsGenerator {
         return result;
     }
 
-    private static Question questionForPlayersTeam(String json) {
+
+    public static Question questionForPlayersTeam(String json, int notRandomIndex) {
         FootballPlayer[] footballers = new FootballPlayer[NUMBER_ANSWERS];
         for (int i = 0; i < footballers.length; i++) {
-            footballers[i] = fetchPlayer(json, i);
+            footballers[i] = fetchPlayer(json, i + 1);
         }
 
         List<String> answers = new ArrayList<>();
@@ -118,15 +135,27 @@ public class QuestionsGenerator {
         }
         StringBuilder content = new StringBuilder();
 
-        int correctAnswerIndex = new Random().nextInt(NUMBER_ANSWERS);
+        int correctAnswerIndex;
+        if (notRandomIndex == -1) {
+            correctAnswerIndex = new Random().nextInt(NUMBER_ANSWERS);
+        } else {
+            correctAnswerIndex = notRandomIndex;
+        }
+
         content.append("\n").append("В кой отбор играе ").append(footballers[correctAnswerIndex].name)
                 .append(", който има отбелязани ").append(footballers[correctAnswerIndex].goals)
                 .append(" гола през този сезон?");
         return new Question(content.toString(), answers, correctAnswerIndex);
     }
 
-    private static Question questionForPlayersGoalsNumber(String json, String league) {
-        FootballPlayer result = fetchPlayer(json, new Random().nextInt(NUMBER_ANSWERS) + 1);
+    public static Question questionForPlayersGoalsNumber(String json, String league, int notRandomIndex) {
+        int correctAnswerIndex;
+        if (notRandomIndex == -1) {
+            correctAnswerIndex = new Random().nextInt(NUMBER_ANSWERS);
+        } else {
+            correctAnswerIndex = notRandomIndex;
+        }
+        FootballPlayer result = fetchPlayer(json, correctAnswerIndex + 1);
         StringBuilder content = new StringBuilder();
         content.append("\n").append("Колко отбелязани гола има ")
                 .append(result.name)
@@ -139,11 +168,11 @@ public class QuestionsGenerator {
         return new Question(content.toString(), answers, 0);
     }
 
-    private static Question questionForLeagueScorers(String json, String league) {
+    public static Question questionForLeagueScorers(String json, String league) {
 
         FootballPlayer[] footballers = new FootballPlayer[NUMBER_ANSWERS];
         for (int i = 0; i < footballers.length; i++) {
-            footballers[i] = fetchPlayer(json, i);
+            footballers[i] = fetchPlayer(json, i + 1);
         }
 
         List<String> answers = new ArrayList<>();
@@ -159,8 +188,14 @@ public class QuestionsGenerator {
         return new Question(content.toString(), answers, 0);
     }
 
-    private static Question questionForLeagueLeaderboard(String json, String league) {
-        Team result = fetchTeam(json, new Random().nextInt(NUMBER_ANSWERS) + 1);
+    public static Question questionForLeagueLeaderboard(String json, String league, int notRandomIndex) {
+        int correctAnswerIndex;
+        if (notRandomIndex == -1) {
+            correctAnswerIndex = new Random().nextInt(NUMBER_ANSWERS);
+        } else {
+            correctAnswerIndex = notRandomIndex;
+        }
+        Team result = fetchTeam(json, correctAnswerIndex + 1);
         StringBuilder content = new StringBuilder();
         content.append("\n")
                 .append("На коя позиция в класирането се намира отборът ")
@@ -175,36 +210,59 @@ public class QuestionsGenerator {
         return new Question(content.toString(), answers, 0);
     }
 
-    synchronized public List<Question> generate() throws Exception {
-        RequestSender retriever = new RequestSender();
-        League leagueFirstQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size() - 1));
-        League leagueSecondQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size()));
+
+    synchronized public List<Question> generate(RequestSender retriever, int notRandomIndex) throws Exception {
+        League leagueFirstQuestion;
+        League leagueSecondQuestion;
+        if (notRandomIndex == -1) {
+            leagueFirstQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size() - 1));
+            leagueSecondQuestion = LEAGUE_CODES.get(new Random().nextInt(LEAGUE_CODES.size()));
+        } else {
+            leagueFirstQuestion = LEAGUE_CODES.get(notRandomIndex);
+            leagueSecondQuestion = LEAGUE_CODES.get(notRandomIndex);
+        }
+
 
         List<Question> questions = new ArrayList<>();
 
         CompletableFuture<String> future1 = retriever.getLeagueStanding(leagueFirstQuestion.code);
 
-        future1.thenApply(s -> questionForLeagueLeaderboard(s, leagueFirstQuestion.name))
+        future1.thenApply(s -> questionForLeagueLeaderboard(s, leagueFirstQuestion.name, -1))
                 .thenAccept(questions::add);
 
         CompletableFuture<String> future2 = retriever.getTopScorer(leagueSecondQuestion.code);
 
         future2.thenApply(resp -> {
-            questions.add(QuestionsGenerator.questionForPlayersTeam(resp));
+            questions.add(QuestionsGenerator.questionForPlayersTeam(resp, -1));
             return resp;
         }).thenApply(resp -> {
             questions.add(QuestionsGenerator.questionForLeagueScorers(resp, leagueSecondQuestion.name));
             return resp;
         }).thenAccept(resp -> {
-            questions.add(QuestionsGenerator.questionForPlayersGoalsNumber(resp, leagueSecondQuestion.name));
+            questions.add(QuestionsGenerator.questionForPlayersGoalsNumber(resp, leagueSecondQuestion.name, -1));
         });
 
 
         future1.join();
         future2.join();
-
+        System.out.println("----" + questions.size());
 
         return questions;
+    }
+
+
+    public static void main(String[] args) {
+        try {
+            List<Question> questions = new QuestionsGenerator().generate(new RequestSender(), -1);
+            for (Question q : questions
+            ) {
+                System.out.println(q);
+
+            }
+            System.out.println("final:" + questions.size());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
