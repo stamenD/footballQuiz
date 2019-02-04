@@ -16,10 +16,12 @@ import java.util.List;
 import java.util.Objects;
 
 public class Game {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     public static final int LENGTH_NAME = 5;
-    public static final int ANSWER_START_INDEX = 3;
-    public static final int ANSWER_END_INDEX = 4;
+
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final int ANSWER_START_INDEX = 3;
+    private static final int ANSWER_END_INDEX = 4;
     private static final int BUFFER_SIZE = 1024;
     private static final int TIME_FOR_THINKING = 6000;
     private static final String ALREADY_ANSWERED = "You already answered for this question!";
@@ -83,7 +85,7 @@ public class Game {
             commandBuffer.clear();
             commandBuffer.put((msg + System.lineSeparator()).getBytes());
             commandBuffer.flip();
-            System.out.println(p.getSc().write(commandBuffer));
+            System.out.println(p.getSocketChannel().write(commandBuffer));
         } catch (IOException e) {
             e.getMessage();
         }

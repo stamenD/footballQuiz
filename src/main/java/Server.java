@@ -124,7 +124,7 @@ public class Server implements AutoCloseable {
             onlineUsers.remove(currentSocketChannel);
             this.rooms.entrySet()
                     .removeIf(stringGameEntry ->
-                            stringGameEntry.getValue().getFirstPlayer().getSc().equals(currentSocketChannel) &&
+                            stringGameEntry.getValue().getFirstPlayer().getSocketChannel().equals(currentSocketChannel) &&
                                     stringGameEntry.getValue().isFree());
             currentSocketChannel.close();
         } catch (IOException E) {

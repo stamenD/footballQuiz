@@ -18,10 +18,9 @@ public class ServerExecutorCommandTest {
     @Test
     public void testToSetNickname() {
         Map<SocketChannel, Player> onlineUsersTest = new HashMap<>();
-        SocketChannel dummy = null;
-        Player firstPlayer = new Player(dummy);
-        onlineUsersTest.put(dummy, firstPlayer);
-        String result = ServerExecutorCommand.setNickname("nickname t".split(" "), onlineUsersTest, dummy);
+        Player firstPlayer = new Player(null);
+        onlineUsersTest.put(null, firstPlayer);
+        String result = ServerExecutorCommand.setNickname("nickname t".split(" "), onlineUsersTest, null);
         assertEquals("You set nickname successful!", result);
         assertEquals("t", onlineUsersTest.get(null).getUsername());
         assertEquals("t", firstPlayer.getUsername());

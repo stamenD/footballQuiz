@@ -41,7 +41,7 @@ public class Player {
         this.currentGame.getAnswer(this, answer);
     }
 
-    public SocketChannel getSc() {
+    public SocketChannel getSocketChannel() {
         return sc;
     }
 }
