@@ -31,8 +31,15 @@ public class ServerExecutorCommand {
                                     Map<String, Game> games) {
         String answer = null;
         if (cmdParts[1].length() < Game.LENGTH_NAME) {
-            games.put(cmdParts[1], new Game(cmdParts[1], onlineUsers.get(caller)));
-            answer = "Successful create room!";
+
+            if (games.values().stream()
+                    .anyMatch(game -> game.getNameRoom().equals(cmdParts[1]))) {
+                answer = "This room is already created!";
+            } else {
+                games.put(cmdParts[1], new Game(cmdParts[1], onlineUsers.get(caller)));
+                answer = "Successful create room!";
+            }
+
         } else {
             answer = "Room name must be smaller than " + Game.LENGTH_NAME + " characters!";
         }
@@ -53,7 +60,7 @@ public class ServerExecutorCommand {
                     answer = "Successful join in room!";
                 }
             } else {
-                answer = "There is not room with that name?!";
+                answer = "There is not room with that name!";
             }
         } else if (cmdParts.length == 1) {
             Game pendingGame = games.values().stream()
@@ -74,18 +81,20 @@ public class ServerExecutorCommand {
                 .append("\n")
                 .append("|------+---------+--------|")
                 .append("\n");
-        for (Game game : games.values()) {
-            sb.append("|")
-                    .append(game.getNameRoomFormated())
-                    .append("|")
-                    .append(game.getFirstPlayer().getUsernameFormat())
-                    .append("|");
-            if (game.isFree()) {
-                sb.append("   yes  ");
-            } else {
-                sb.append("   no   ");
+        if (games != null) {
+            for (Game game : games.values()) {
+                sb.append("|")
+                        .append(game.getNameRoomFormated())
+                        .append("|")
+                        .append(game.getFirstPlayer().getUsernameFormat())
+                        .append("|");
+                if (game.isFree()) {
+                    sb.append("   yes  ");
+                } else {
+                    sb.append("   no   ");
+                }
+                sb.append("|").append("\n");
             }
-            sb.append("|").append("\n");
         }
         sb.append("|------+---------+--------|").append("\n");
         return sb.toString();
