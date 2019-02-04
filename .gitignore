@@ -13,6 +13,6 @@
 *.tar.gz
 *.rar
 
-
-.idea/
 *.txt
+.idea/
+
