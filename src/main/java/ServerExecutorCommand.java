@@ -11,16 +11,20 @@ public class ServerExecutorCommand {
                                      Map<SocketChannel, Player> onlineUsers,
                                      SocketChannel caller) {
         String answer = null;
-        if (cmdParts[1].length() < Player.LENGTH_NAME) {
-            if (onlineUsers.values().stream()
-                    .anyMatch(player -> player.getUsername() != null && player.getUsername().equals(cmdParts[1]))) {
-                answer = "This username is already used!";
+        if (onlineUsers.get(caller).getUsername() == null) {
+            if (cmdParts[1].length() < Player.LENGTH_NAME) {
+                if (onlineUsers.values().stream()
+                        .anyMatch(player -> player.getUsername() != null && player.getUsername().equals(cmdParts[1]))) {
+                    answer = "This username is already used!";
+                } else {
+                    onlineUsers.get(caller).setUsername(cmdParts[1]);
+                    answer = "You set nickname successful!";
+                }
             } else {
-                onlineUsers.get(caller).setUsername(cmdParts[1]);
-                answer = "You set nickname successful!";
+                answer = "Your nickname must be smaller than " + Player.LENGTH_NAME + " characters!";
             }
         } else {
-            answer = "Your nickname must be smaller than " + Player.LENGTH_NAME + " characters!";
+            answer = "You already have a nickname.";
         }
         return answer;
     }
@@ -57,6 +61,7 @@ public class ServerExecutorCommand {
                     answer = "This room is full!";
                 } else {
                     games.get(cmdParts[1]).setSecondPlayer(onlineUsers.get(caller));
+                    games.get(cmdParts[1]).startGame();
                     answer = "Successful join in room!";
                 }
             } else {
@@ -76,7 +81,7 @@ public class ServerExecutorCommand {
     }
 
     public static String listCurrentGames(Map<String, Game> games) {
-        StringBuilder sb = new StringBuilder("");
+        StringBuilder sb = new StringBuilder();
         sb.append("| NAME | CREATOR | ISFREE |")
                 .append("\n")
                 .append("|------+---------+--------|")
@@ -84,7 +89,7 @@ public class ServerExecutorCommand {
         if (games != null) {
             for (Game game : games.values()) {
                 sb.append("|")
-                        .append(game.getNameRoomFormated())
+                        .append(game.getNameRoomFormatted())
                         .append("|")
                         .append(game.getFirstPlayer().getUsernameFormat())
                         .append("|");

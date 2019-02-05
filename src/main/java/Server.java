@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class Server implements AutoCloseable {
 
-    private static final int SERVER_PORT = 4444;
+    public static final int SERVER_PORT = 4444;
     private static final int BUFFER_SIZE = 1024;
 
     private Map<String, Game> rooms;
@@ -42,7 +42,7 @@ public class Server implements AutoCloseable {
         serverSocketChannel.socket().bind(new InetSocketAddress(port));
     }
 
-    private void start() throws IOException {
+    public void start() throws IOException {
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         System.out.println(String.format("Server run on %s", InetAddress.getLocalHost().getHostAddress()));
@@ -101,7 +101,7 @@ public class Server implements AutoCloseable {
                 onlineUsers.get(currentSocketChannel).sendAnswer(message);
             } else {
                 String result = executeCommand(message, currentSocketChannel);
-
+                System.out.println("data to send:" + result);
                 commandBuffer.clear();
                 commandBuffer.put((result + System.lineSeparator()).getBytes());
                 commandBuffer.flip();
@@ -112,7 +112,7 @@ public class Server implements AutoCloseable {
             clearUserData(currentSocketChannel);
         } catch (RuntimeException e) {
             System.err.println("Socket disconnected! " + currentSocketChannel);
-            e.printStackTrace();
+            //e.printStackTrace();
             clearUserData(currentSocketChannel);
             key.cancel();
         }
@@ -141,8 +141,6 @@ public class Server implements AutoCloseable {
         System.out.print("->>>" + receiveMsg + ".");
         String[] cmdParts = receiveMsg.split("\\s+");
         String answer = null;
-        System.out.println(cmdParts);
-        System.out.println(cmdParts.length);
         if (cmdParts.length > 0) {
             String command = cmdParts[0].trim();
             try {

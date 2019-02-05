@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -13,11 +15,18 @@ public class Client implements AutoCloseable {
     private static final int SERVER_PORT = 4444;
     private static final String HOSTNAME = "127.0.0.1";
     private static final int BUFFER_SIZE = 1024;
+    private static final int TIME_TO_SHUTDOWN = 1000;
     private SocketChannel socketChannel;
     private ByteBuffer byteBuffer;
     private Selector selector;
+    private OutputStream outputStream;
+    private InputStream inputStream;
 
-    public Client(String hostname, int port) throws IOException {
+    public Client(String hostname, int port, OutputStream out, InputStream in) throws IOException {
+
+        this.outputStream = out;
+        this.inputStream = in;
+
         byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
         selector = Selector.open();
@@ -27,7 +36,7 @@ public class Client implements AutoCloseable {
         System.out.println("Successful connection!");
     }
 
-    private void start() throws IOException {
+    public void start() throws IOException {
 
         socketChannel.configureBlocking(false);
         socketChannel.register(selector, SelectionKey.OP_READ);
@@ -36,7 +45,7 @@ public class Client implements AutoCloseable {
         Thread t = new Thread(this::run);
         t.start();
 
-        try (Scanner scanner = new Scanner(System.in)) {
+        try (Scanner scanner = new Scanner(this.inputStream)) {
 
             while (true) {
 
@@ -47,6 +56,7 @@ public class Client implements AutoCloseable {
                     }
 
                     if (msg.equals("q")) {
+                        Thread.sleep(TIME_TO_SHUTDOWN);
                         t.interrupt();
                         break;
                     }
@@ -57,6 +67,8 @@ public class Client implements AutoCloseable {
             System.err.println("Unsuccessful write command!");
             e.printStackTrace();
             t.interrupt();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -79,7 +91,7 @@ public class Client implements AutoCloseable {
             }
             byteBuffer.flip();
             String message = Charset.forName("UTF-8").decode(byteBuffer).toString();
-            System.out.print(message);
+            this.outputStream.write(message.getBytes());
         }
     }
 
@@ -127,7 +139,7 @@ public class Client implements AutoCloseable {
     }
 
     public static void main(String[] args) {
-        try (Client client = new Client(HOSTNAME, SERVER_PORT)) {
+        try (Client client = new Client(HOSTNAME, SERVER_PORT, System.out, System.in)) {
             client.start();
         } catch (Exception e) {
             System.err.println("Unsuccessful connection!");

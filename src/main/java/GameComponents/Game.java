@@ -64,7 +64,7 @@ public class Game {
         return nameRoom;
     }
 
-    public String getNameRoomFormated() {
+    public String getNameRoomFormatted() {
         if (nameRoom != null && nameRoom.length() < LENGTH_NAME)
             return " " + nameRoom + " ".repeat(LENGTH_NAME - nameRoom.length());
         else {
