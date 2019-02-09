@@ -15,7 +15,7 @@ public class GameTest {
     @Test
     public void testToCreateInstance() {
         Player dummy = new Player(null);
-        Game game = new Game("name", dummy);
+        Game game = new Game("name", dummy, null);
         assertNotNull(game);
         assertEquals("name", game.getNameRoom());
         assertEquals(dummy, game.getFirstPlayer());
@@ -24,7 +24,7 @@ public class GameTest {
     @Test
     public void testToSetSecondPlayerInGame() {
         Player dummy = new Player(null);
-        Game game = new Game("name", new Player(null));
+        Game game = new Game("name", new Player(null), null);
         game.setSecondPlayer(dummy);
         assertEquals(dummy, game.getSecondPlayer());
     }
@@ -32,7 +32,7 @@ public class GameTest {
     @Test
     public void testRoomIsFull() {
         Player dummy = new Player(null);
-        Game game = new Game("name", new Player(null));
+        Game game = new Game("name", new Player(null), null);
         assertTrue(game.isFree());
         game.setSecondPlayer(dummy);
         assertFalse(game.isFree());
@@ -40,13 +40,13 @@ public class GameTest {
 
     @Test
     public void testGameNameFormatted() {
-        Game one = new Game("t", new Player(null));
+        Game one = new Game("t", new Player(null), null);
 
         StringBuilder name = new StringBuilder();
         while (name.length() < Game.LENGTH_NAME) {
             name.append("t");
         }
-        Game two = new Game(name.toString(), new Player(null));
+        Game two = new Game(name.toString(), new Player(null), null);
         assertEquals(" t" + " ".repeat(Game.LENGTH_NAME - "t".length()), one.getNameRoomFormatted());
         assertEquals("t" + "t".repeat(Game.LENGTH_NAME - "t".length()), two.getNameRoomFormatted());
     }
@@ -56,7 +56,7 @@ public class GameTest {
     public void testGetAnswerFromPlayerWhenIsNotStartGame() {
         SocketChannel socketChannelMock = mock(SocketChannel.class);
         Player dummyPlayer = new Player(socketChannelMock);
-        Game one = new Game("t", dummyPlayer);
+        Game one = new Game("t", dummyPlayer, null);
         one.getAnswer(dummyPlayer, "1");
 
         try {
@@ -64,7 +64,7 @@ public class GameTest {
                     + System.lineSeparator()).getBytes()));
         } catch (IOException e) {
             System.out.println("SocketChannel problem!");
-            e.printStackTrace();
+          //  e.printStackTrace();
         }
     }
 
@@ -75,7 +75,7 @@ public class GameTest {
         SocketChannel socketChannelMockTwo = mock(SocketChannel.class);
         Player dummyPlayerOne = new Player(socketChannelMockOne);
         Player dummyPlayerTwo = new Player(socketChannelMockTwo);
-        Game game = new Game("t", dummyPlayerOne);
+        Game game = new Game("t", dummyPlayerOne, null);
         game.setSecondPlayer(dummyPlayerTwo);
         game.startGame();
         try {
@@ -84,7 +84,8 @@ public class GameTest {
             verify(socketChannelMockTwo).write(ByteBuffer.wrap(("The GAME will start soon! Get ready! :)"
                     + System.lineSeparator()).getBytes()));
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("SocketChannel problem!");
+            //   e.printStackTrace();
         }
     }
 

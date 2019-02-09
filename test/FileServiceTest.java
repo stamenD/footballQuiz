@@ -22,7 +22,7 @@ public class FileServiceTest {
         try {
             outputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error occurred when close stream");
         }
         assertEquals("DUMMY GAME INFORMATION", result.trim());
     }
@@ -37,7 +37,7 @@ public class FileServiceTest {
         try {
             outputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error occurred when close stream");
         }
         assertEquals("DUMMY GAME INFORMATION1" + System.lineSeparator() + "DUMMY GAME INFORMATION2", result.trim());
     }
@@ -50,7 +50,7 @@ public class FileServiceTest {
         try {
             outputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error occurred when close stream");
         }
         assertEquals("result1 result2", io.getAllPlayedGames().trim());
     }

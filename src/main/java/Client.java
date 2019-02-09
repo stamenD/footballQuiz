@@ -60,15 +60,17 @@ public class Client implements AutoCloseable {
                         t.interrupt();
                         break;
                     }
-                    send(msg);
+                    for (String s : msg.split(System.lineSeparator())) {
+                        //     System.err.println("I send : " + s);
+                        send(s);
+                    }
                 }
             }
         } catch (IOException e) {
             System.err.println("Unsuccessful write command!");
-            e.printStackTrace();
             t.interrupt();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            System.err.println("Occurred shutdown error.");
         }
     }
 
@@ -129,10 +131,10 @@ public class Client implements AutoCloseable {
                 }
             } catch (IOException e) {
                 System.err.println("An error occurred on server side!");
-                e.printStackTrace();
+//                e.printStackTrace();
             } catch (RuntimeException e) {
-                System.err.println("Channel is broken2!");
-                e.printStackTrace();
+                System.err.println("Channel was broken!");
+                // e.printStackTrace();
             }
         }
 
@@ -143,7 +145,7 @@ public class Client implements AutoCloseable {
             client.start();
         } catch (Exception e) {
             System.err.println("Unsuccessful connection!");
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 

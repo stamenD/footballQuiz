@@ -28,7 +28,7 @@ public class Server implements AutoCloseable {
     private Selector selector;
     private ByteBuffer commandBuffer;
     private ServerSocketChannel serverSocketChannel;
-    private boolean runServer = true;
+    private boolean runServer;
 
     public Server(int port) throws IOException {
         rooms = new HashMap<>();
@@ -46,7 +46,7 @@ public class Server implements AutoCloseable {
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         System.out.println(String.format("Server run on %s", InetAddress.getLocalHost().getHostAddress()));
-
+        runServer = true;
         while (runServer) {
             int readyChannels = selector.select(); //block operation
             if (readyChannels <= 0) {
@@ -72,6 +72,10 @@ public class Server implements AutoCloseable {
 
     public void stopServer() {
         runServer = false;
+    }
+
+    public boolean isRunningServer() {
+        return runServer;
     }
 
     private void accept(SelectionKey key) throws IOException {
@@ -101,7 +105,7 @@ public class Server implements AutoCloseable {
                 onlineUsers.get(currentSocketChannel).sendAnswer(message);
             } else {
                 String result = executeCommand(message, currentSocketChannel);
-                System.out.println("data to send:" + result);
+                //System.out.println("data to send:" + result);
                 commandBuffer.clear();
                 commandBuffer.put((result + System.lineSeparator()).getBytes());
                 commandBuffer.flip();
@@ -138,7 +142,7 @@ public class Server implements AutoCloseable {
 
 
     private String executeCommand(String receiveMsg, SocketChannel caller) {
-        System.out.print("->>>" + receiveMsg + ".");
+      //  System.out.print("->>>" + receiveMsg + ".");
         String[] cmdParts = receiveMsg.split("\\s+");
         String answer = null;
         if (cmdParts.length > 0) {
@@ -186,7 +190,7 @@ public class Server implements AutoCloseable {
         try (Server es = new Server(SERVER_PORT)) {
             es.start();
         } catch (Exception e) {
-            System.out.println("An error has occurred!");
+            System.err.println("An error has occurred!");
         }
     }
 }

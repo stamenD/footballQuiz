@@ -128,7 +128,7 @@ public class ServerExecutorCommandTest {
         Map<String, Game> games = new HashMap<>();
         Player creator = new Player(null);
         creator.setUsername("you");
-        games.put("room", new Game("room", creator));
+        games.put("room", new Game("room", creator, null));
         assertEquals("| NAME | CREATOR | ISFREE |\n" +
                 "|------+---------+--------|\n" +
                 "| room | you     |   yes  |\n" +
@@ -187,7 +187,7 @@ public class ServerExecutorCommandTest {
         Player secondPlayer = new Player(secondChannel);
         onlineUsersTest.put(firstChannel, firstPlayer);
         onlineUsersTest.put(secondChannel, secondPlayer);
-        Game freeRoom = new Game("f",firstPlayer);
+        Game freeRoom = new Game("f",firstPlayer, null);
         games.put("f",freeRoom);
 
         String result = ServerExecutorCommand.joinInGame("join-game".split(" "),
@@ -210,7 +210,7 @@ public class ServerExecutorCommandTest {
         Player secondPlayer = new Player(secondChannel);
         onlineUsersTest.put(firstChannel, firstPlayer);
         onlineUsersTest.put(secondChannel, secondPlayer);
-        Game freeRoom = new Game("f",firstPlayer);
+        Game freeRoom = new Game("f",firstPlayer, null);
         games.put("f",freeRoom);
 
         String result = ServerExecutorCommand.joinInGame("join-game f".split(" "),

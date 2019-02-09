@@ -31,11 +31,12 @@ public class Question {
         StringBuilder sb = new StringBuilder();
         sb.append("\n")
                 .append(content)
-                .append("\na)")
+//                .append(correctAnswerIndex)
+                .append("\n0)")
                 .append(answers.get(0))
-                .append("\nb)")
+                .append("\n1)")
                 .append(answers.get(1))
-                .append("\nc)")
+                .append("\n2)")
                 .append(answers.get(2));
         return sb.toString();
     }

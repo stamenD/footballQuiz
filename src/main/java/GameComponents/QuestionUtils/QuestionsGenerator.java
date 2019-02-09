@@ -250,19 +250,4 @@ public class QuestionsGenerator {
         return questions;
     }
 
-
-    public static void main(String[] args) {
-        try {
-            List<Question> questions = new QuestionsGenerator().generate(new RequestSender(), -1);
-            for (Question q : questions
-            ) {
-                System.out.println(q);
-
-            }
-            System.out.println("final:" + questions.size());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 }

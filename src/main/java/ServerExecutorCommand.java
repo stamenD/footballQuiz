@@ -7,6 +7,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 
 public class ServerExecutorCommand {
+    private static final IOFile RECORDER = new IOFile();
+
+
     public static String setNickname(String[] cmdParts,
                                      Map<SocketChannel, Player> onlineUsers,
                                      SocketChannel caller) {
@@ -40,7 +43,7 @@ public class ServerExecutorCommand {
                     .anyMatch(game -> game.getNameRoom().equals(cmdParts[1]))) {
                 answer = "This room is already created!";
             } else {
-                games.put(cmdParts[1], new Game(cmdParts[1], onlineUsers.get(caller)));
+                games.put(cmdParts[1], new Game(cmdParts[1], onlineUsers.get(caller), RECORDER));
                 answer = "Successful create room!";
             }
 
@@ -106,7 +109,7 @@ public class ServerExecutorCommand {
     }
 
     public static String showHistoryGames() {
-        return new IOFile(null, null).getAllPlayedGames();
+        return RECORDER.getAllPlayedGames();
     }
 
 }

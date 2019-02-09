@@ -17,13 +17,14 @@ public class IOFile {
     private OutputStream whereToSave;
     private InputStream fromWhereRead;
 
+    public IOFile() {
+        this(null, null);
+        System.out.println("NEW INSTANCE!");
+    }
+
     public IOFile(OutputStream whereToSave, InputStream fromWhereRead) {
-        if (whereToSave != null) {
-            this.whereToSave = whereToSave;
-        }
-        if (fromWhereRead != null) {
-            this.fromWhereRead = fromWhereRead;
-        }
+        this.whereToSave = whereToSave;
+        this.fromWhereRead = fromWhereRead;
     }
 
     synchronized public void saveGame(String result) {
@@ -43,13 +44,15 @@ public class IOFile {
             throw new StreamError(e.getMessage());
         } finally {
             if (!isOutsideSetStream) {
-                try {
+//                try {
+                if (objectStream != null) {
+                    whereToSave = null;
                     objectStream.close();
-                    whereToSave.close();
-                } catch (IOException e) {
-                    System.out.println("Not close correct stream!");
-                    throw new StreamError(e.getMessage());
                 }
+//                } catch (IOException e) {
+//                    System.out.println("Not close correct stream!");
+//                    throw new StreamError(e.getMessage());
+//                }
             }
         }
     }
@@ -71,7 +74,10 @@ public class IOFile {
         } finally {
             if (!isOutsideSetStream) {
                 try {
-                    bufferedReader.close();
+                    if (bufferedReader != null) {
+                        fromWhereRead = null;
+                        bufferedReader.close();
+                    }
                 } catch (IOException e) {
                     System.out.println("Not close correct stream!");
                     throw new StreamError(e.getMessage());

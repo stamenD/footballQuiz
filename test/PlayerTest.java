@@ -1,5 +1,6 @@
 import GameComponents.Game;
 import GameComponents.Player;
+import Services.IOFile;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -27,7 +28,7 @@ public class PlayerTest {
     @Test
     public void testToSetPlayerGame() {
         Player one = new Player(null);
-        Game randomGame = new Game("f", one);
+        Game randomGame = new Game("f", one, new IOFile());
         one.setCurrentGame(randomGame);
         assertEquals(randomGame, one.getCurrentGame());
     }

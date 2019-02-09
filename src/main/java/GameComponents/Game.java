@@ -20,11 +20,10 @@ public class Game {
 
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private static final int ANSWER_START_INDEX = 3;
-    private static final int ANSWER_END_INDEX = 4;
     private static final int BUFFER_SIZE = 1024;
     private static final int TIME_FOR_THINKING = 6000;
-    private static final String ALREADY_ANSWERED = "You already answered for this question!";
+    private static final String ALREADY_ANSWERED = "You have already answered!";
+    private static final String SUCCESSFUL_GET_ANSWER = "You have answered: ";
     private static final String GET_READY_MESSAGE = "The GAME will start soon! Get ready! :)";
     private static final String WIN_MESSAGE = "You WIN!";
     private static final String ERROR_MASSAGE = "Аn error occurred in current game!";
@@ -38,13 +37,15 @@ public class Game {
     private Player firstPlayer;
     private Player secondPlayer;
     private List<Question> questions;
-    private List<String> answersFromFirstPlayer;
-    private List<String> answersFromSecondPlayer;
+    private String[] answersFromFirstPlayer;
+    private String[] answersFromSecondPlayer;
     private volatile int index;
     private boolean isFinished;
     private boolean isOpenToGetAnswers;
+    private IOFile recorder;
 
-    public Game(String nameRoom, Player firstPlayer) {
+    public Game(String nameRoom, Player firstPlayer, IOFile recorder) {
+        this.recorder = recorder;
         this.nameRoom = nameRoom;
         this.firstPlayer = firstPlayer;
         firstPlayer.setCurrentGame(this);
@@ -80,12 +81,12 @@ public class Game {
         return secondPlayer;
     }
 
-    private void sendMessageToPlayer(Player p, String msg) {
+    private void sendMessageToPlayer(Player player, String msg) {
         try {
             commandBuffer.clear();
             commandBuffer.put((msg + System.lineSeparator()).getBytes());
             commandBuffer.flip();
-            System.out.println(p.getSocketChannel().write(commandBuffer));
+            player.getSocketChannel().write(commandBuffer);
         } catch (IOException e) {
             e.getMessage();
         }
@@ -111,9 +112,9 @@ public class Game {
             try {
                 loadQuestions();
 
-                index = 0;
-                answersFromFirstPlayer = new ArrayList<>();
-                answersFromSecondPlayer = new ArrayList<>();
+                index = -1;
+                answersFromFirstPlayer = new String[questions.size()];
+                answersFromSecondPlayer = new String[questions.size()];
                 for (Question question : questions) {
                     sendMessageToTwoPlayers(question.toString());
                     isOpenToGetAnswers = true;
@@ -153,7 +154,7 @@ public class Game {
 
         sendMessageToTwoPlayers(result);
         try {
-            new IOFile(null, null).saveGame(result);
+            this.recorder.saveGame(result);
         } catch (StreamError e) {
             System.out.println("Result has not been saved!");
         }
@@ -170,17 +171,18 @@ public class Game {
         isFinished = true;
     }
 
-    private int calculateCorrectAnswers(List<String> answers) {
+    private int calculateCorrectAnswers(String[] answers) {
+        System.out.println("-<<<<  " + answers);
+        System.out.println("-<<<<  " + questions.get(0));
         int count = 0;
-        int lastCalculate = -1;
+        int innerIndex = 0;
         for (String ans : answers) {
-            if (Integer.parseInt(ans.substring(0, 1)) - 1 != lastCalculate) {
-                lastCalculate = Integer.parseInt(ans.substring(0, 1)) - 1;
-                if (ans.substring(ANSWER_START_INDEX, ANSWER_END_INDEX)
-                        .equals(String.valueOf(questions.get(lastCalculate).getCorrectAnswerIndex()))) {
-                    count++;
-                }
+            System.out.println(innerIndex);
+            System.out.println(ans);
+            if (ans != null && ans.equals(String.valueOf(questions.get(innerIndex).getCorrectAnswerIndex()))) {
+                count++;
             }
+            innerIndex++;
         }
         return count;
     }
@@ -190,18 +192,18 @@ public class Game {
             if (!answer.equals(" ") && !answer.equals(System.lineSeparator())) {
                 System.out.println("answer :" + answer);
                 if (from.equals(firstPlayer)) {
-                    if (index == answersFromFirstPlayer.size()) {
+                    if (answersFromFirstPlayer[index] != null) {
                         sendMessageToPlayer(firstPlayer, ALREADY_ANSWERED);
                     } else {
-                        answersFromFirstPlayer.add(index + ") " + answer);
+                        answersFromFirstPlayer[index] = answer;
+                        sendMessageToPlayer(firstPlayer, SUCCESSFUL_GET_ANSWER + answer);
                     }
                 } else {
-                    System.out.println("index:" + index);
-                    System.out.println("size:" + answersFromSecondPlayer.size());
-                    if (index == answersFromSecondPlayer.size()) {
+                    if (answersFromSecondPlayer[index] != null) {
                         sendMessageToPlayer(secondPlayer, ALREADY_ANSWERED);
                     } else {
-                        answersFromSecondPlayer.add(index + ") " + answer);
+                        answersFromSecondPlayer[index] = answer;
+                        sendMessageToPlayer(secondPlayer, SUCCESSFUL_GET_ANSWER + answer);
                     }
                 }
             }

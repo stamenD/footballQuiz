@@ -69,9 +69,9 @@ public class QuestionUtilsTest {
         List<String> answers = Arrays.asList("1","2","3");
         Question expect = new Question(content.toString(), answers, 0);
         String result = "\n\nНа коя позиция в класирането се намира отборът \"Liverpool FC\" в Premiere League в момента?\n" +
-                "a)1\n" +
-                "b)2\n" +
-                "c)3";
+                "0)1\n" +
+                "1)2\n" +
+                "2)3";
         assertEquals(expect.toString(),result.toString());
     }
 
