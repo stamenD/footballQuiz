@@ -1,7 +1,7 @@
-import CustomExceptions.NotFoundFreeRoom;
-import CustomExceptions.NotSetUsername;
-import GameComponents.Game;
-import GameComponents.Player;
+import customexceptions.NotFoundFreeRoom;
+import customexceptions.NotSetUsername;
+import entities.Game;
+import entities.Player;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -11,7 +11,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,22 +18,22 @@ import java.util.Set;
 
 public class Server implements AutoCloseable {
 
-    public static final int SERVER_PORT = 4444;
+    static final int SERVER_PORT = 4444;
     private static final int BUFFER_SIZE = 1024;
 
-    private Map<String, Game> rooms;
-    private Map<SocketChannel, Player> onlineUsers;
+    private final Map<String, Game> rooms;
+    private final Map<SocketChannel, Player> onlineUsers;
 
-    private Selector selector;
-    private ByteBuffer commandBuffer;
-    private ServerSocketChannel serverSocketChannel;
+    private final Selector selector;
+    private final ByteBuffer commandBuffer;
+    private final ServerSocketChannel serverSocketChannel;
     private boolean runServer;
 
-    public Server(int port) throws IOException {
+    public Server(final int port) throws IOException {
         rooms = new HashMap<>();
         onlineUsers = new HashMap<>();
 
-        commandBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+        commandBuffer = ByteBuffer.allocate(Server.BUFFER_SIZE);
 
         selector = Selector.open();
 
@@ -42,27 +41,36 @@ public class Server implements AutoCloseable {
         serverSocketChannel.socket().bind(new InetSocketAddress(port));
     }
 
-    public void start() throws IOException {
+    public static void main(final String[] args) {
+        try (final Server es = new Server(Server.SERVER_PORT)) {
+            es.start();
+        } catch (final Exception e) {
+            System.err.println("An error has occurred!");
+        }
+    }
+
+    void start() throws IOException {
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         System.out.println(String.format("Server run on %s", InetAddress.getLocalHost().getHostAddress()));
         runServer = true;
         while (runServer) {
-            int readyChannels = selector.select(); //block operation
+            final int readyChannels = selector.select(); //block operation
             if (readyChannels <= 0) {
                 continue;
             }
 
             refreshRooms();
 
-            Set<SelectionKey> selectedKeys = selector.selectedKeys();
-            Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+            final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            final Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
             while (keyIterator.hasNext()) {
-                SelectionKey key = keyIterator.next();
+                final SelectionKey key = keyIterator.next();
                 if (key.isReadable()) {
-                    this.read(key);
-                } else if (key.isAcceptable()) {
-                    this.accept(key);
+                    read(key);
+                }
+                else if (key.isAcceptable()) {
+                    accept(key);
                 }
                 keyIterator.remove();
             }
@@ -70,7 +78,7 @@ public class Server implements AutoCloseable {
         }
     }
 
-    public void stopServer() {
+    void stopServer() {
         runServer = false;
     }
 
@@ -78,43 +86,43 @@ public class Server implements AutoCloseable {
         return runServer;
     }
 
-    private void accept(SelectionKey key) throws IOException {
-        ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
-        SocketChannel newSocketChannel = ssc.accept();
+    private void accept(final SelectionKey key) throws IOException {
+        final ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+        final SocketChannel newSocketChannel = ssc.accept();
         System.out.println("New socket connect " + newSocketChannel);
         onlineUsers.put(newSocketChannel, new Player(newSocketChannel));
         newSocketChannel.configureBlocking(false);
         newSocketChannel.register(selector, SelectionKey.OP_READ);
     }
 
-
-    private void read(SelectionKey key) {
-        SocketChannel currentSocketChannel = (SocketChannel) key.channel();
+    private void read(final SelectionKey key) {
+        final SocketChannel currentSocketChannel = (SocketChannel) key.channel();
         try {
             commandBuffer.clear();
-            int r = currentSocketChannel.read(commandBuffer); // size ?
+            final int r = currentSocketChannel.read(commandBuffer); // size ?
             if (r == -1) {
                 throw new RuntimeException("Channel is broken!");
             }
             commandBuffer.flip();
 
-            String message = Charset.forName("UTF-8").decode(commandBuffer).toString();
+            final String message = java.nio.charset.StandardCharsets.UTF_8.decode(commandBuffer).toString();
 
             //check whether player is playing in this moment
             if (onlineUsers.get(currentSocketChannel).getCurrentGame() != null) {
                 onlineUsers.get(currentSocketChannel).sendAnswer(message);
-            } else {
-                String result = executeCommand(message, currentSocketChannel);
+            }
+            else {
+                final String result = executeCommand(message, currentSocketChannel);
                 //System.out.println("data to send:" + result);
                 commandBuffer.clear();
                 commandBuffer.put((result + System.lineSeparator()).getBytes());
                 commandBuffer.flip();
                 currentSocketChannel.write(commandBuffer);
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("Channel is broken! " + currentSocketChannel);
             clearUserData(currentSocketChannel);
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             System.err.println("Socket disconnected! " + currentSocketChannel);
             //e.printStackTrace();
             clearUserData(currentSocketChannel);
@@ -122,53 +130,58 @@ public class Server implements AutoCloseable {
         }
     }
 
-
-    private void clearUserData(SocketChannel currentSocketChannel) {
+    private void clearUserData(final SocketChannel currentSocketChannel) {
         try {
             onlineUsers.remove(currentSocketChannel);
-            this.rooms.entrySet()
+            rooms.entrySet()
                     .removeIf(stringGameEntry ->
-                            stringGameEntry.getValue().getFirstPlayer().getSocketChannel().equals(currentSocketChannel) &&
-                                    stringGameEntry.getValue().isFree());
+                                      stringGameEntry.getValue().getFirstPlayer().getSocketChannel()
+                                              .equals(currentSocketChannel) &&
+                                              stringGameEntry.getValue().isFree());
             currentSocketChannel.close();
-        } catch (IOException E) {
+        } catch (final IOException E) {
             System.err.println("Unsuccessful close socket!");
         }
     }
 
     private void refreshRooms() {
-        this.rooms.entrySet().removeIf(stringGameEntry -> stringGameEntry.getValue().isFinished());
+        rooms.entrySet().removeIf(stringGameEntry -> stringGameEntry.getValue().isFinished());
     }
 
-
-    private String executeCommand(String receiveMsg, SocketChannel caller) {
-      //  System.out.print("->>>" + receiveMsg + ".");
-        String[] cmdParts = receiveMsg.split("\\s+");
+    private String executeCommand(final String receiveMsg, final SocketChannel caller) {
+        //  System.out.print("->>>" + receiveMsg + ".");
+        final String[] cmdParts = receiveMsg.split("\\s+");
         String answer = null;
         if (cmdParts.length > 0) {
-            String command = cmdParts[0].trim();
+            final String command = cmdParts[0].trim();
             try {
                 if (command.equalsIgnoreCase("nickname") && cmdParts.length == 2) {
-                    answer = ServerExecutorCommand.setNickname(cmdParts, onlineUsers, caller);
-                } else if (onlineUsers.get(caller).getUsername() != null) {
+                    answer = services.ServerExecutorCommand.setNickname(cmdParts, onlineUsers, caller);
+                }
+                else if (onlineUsers.get(caller).getUsername() != null) {
                     if (command.equalsIgnoreCase("create-game") && cmdParts.length == 2) {
-                        answer = ServerExecutorCommand.createGame(cmdParts, onlineUsers, caller, this.rooms);
-                    } else if (command.equalsIgnoreCase("join-game")) {
-                        answer = ServerExecutorCommand.joinInGame(cmdParts, onlineUsers, caller, this.rooms);
-                    } else if (command.equalsIgnoreCase("list-rooms") && cmdParts.length == 1) {
-                        answer = ServerExecutorCommand.listCurrentGames(this.rooms);
-                    } else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
-                        answer = ServerExecutorCommand.showHistoryGames();
-                    } else {
+                        answer = services.ServerExecutorCommand.createGame(cmdParts, onlineUsers, caller, rooms);
+                    }
+                    else if (command.equalsIgnoreCase("join-game")) {
+                        answer = services.ServerExecutorCommand.joinInGame(cmdParts, onlineUsers, caller, rooms);
+                    }
+                    else if (command.equalsIgnoreCase("list-rooms") && cmdParts.length == 1) {
+                        answer = services.ServerExecutorCommand.listCurrentGames(rooms);
+                    }
+                    else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
+                        answer = services.ServerExecutorCommand.showHistoryGames();
+                    }
+                    else {
                         answer = "Unknown command";
                     }
-                } else {
-                    throw new NotSetUsername();
                 }
-            } catch (NotFoundFreeRoom e) {
+                else {
+                    throw new customexceptions.NotSetUsername();
+                }
+            } catch (final NotFoundFreeRoom e) {
                 answer = "There are not free rooms!";
                 return answer;
-            } catch (NotSetUsername e) {
+            } catch (final NotSetUsername e) {
                 answer = "Please set your nickname to continue!";
                 return answer;
             }
@@ -179,18 +192,9 @@ public class Server implements AutoCloseable {
         return answer;
     }
 
-
     @Override
     public void close() throws Exception {
         serverSocketChannel.close();
         selector.close();
-    }
-
-    public static void main(String[] args) {
-        try (Server es = new Server(SERVER_PORT)) {
-            es.start();
-        } catch (Exception e) {
-            System.err.println("An error has occurred!");
-        }
     }
 }

@@ -1,6 +1,6 @@
-import GameComponents.Game;
-import GameComponents.Player;
-import Services.IOFile;
+import entities.Game;
+import entities.Player;
+import services.IOFile;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

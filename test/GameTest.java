@@ -1,5 +1,5 @@
-import GameComponents.Game;
-import GameComponents.Player;
+import entities.Game;
+import entities.Player;
 import org.junit.Test;
 
 import java.io.IOException;

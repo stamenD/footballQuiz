@@ -1,5 +1,8 @@
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import entities.Question;
+import org.junit.Test;
+import org.mockito.Mock;
+import services.QuestionsGenerator;
+import services.RequestSender;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -7,11 +10,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import GameComponents.QuestionUtils.Question;
-import GameComponents.QuestionUtils.QuestionsGenerator;
-import GameComponents.QuestionUtils.RequestSender;
-import org.junit.Test;
-import org.mockito.Mock;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class QuestionUtilsTest {
     private final static String TEST_RESPONSE = "{\"count\":3,\"filters\":{\"limit\":3}," +
@@ -55,10 +56,9 @@ public class QuestionUtilsTest {
     private HttpResponse<String> httpResponseMock;
 
 
-
     @Test
-    public void testCanCreateQuestion()  {
-        StringBuilder content = new StringBuilder();
+    public void testCanCreateQuestion() {
+        final StringBuilder content = new StringBuilder();
         content.append("\n")
                 .append("На коя позиция в класирането се намира отборът ")
                 .append("\"Liverpool FC\"")
@@ -66,18 +66,18 @@ public class QuestionUtilsTest {
                 .append("Premiere League")
                 .append(" в момента?");
 
-        List<String> answers = Arrays.asList("1","2","3");
-        Question expect = new Question(content.toString(), answers, 0);
-        String result = "\n\nНа коя позиция в класирането се намира отборът \"Liverpool FC\" в Premiere League в момента?\n" +
+        final List<String> answers = Arrays.asList("1", "2", "3");
+        final Question expect = new Question(content.toString(), answers, 0);
+        final String result = "\n\nНа коя позиция в класирането се намира отборът \"Liverpool FC\" в Premiere League в момента?\n" +
                 "0)1\n" +
                 "1)2\n" +
                 "2)3";
-        assertEquals(expect.toString(),result.toString());
+        assertEquals(expect.toString(), result);
     }
 
     @Test
-    public void testToCreateQuestionForLeagueLeaderboard()  {
-        StringBuilder content = new StringBuilder();
+    public void testToCreateQuestionForLeagueLeaderboard() {
+        final StringBuilder content = new StringBuilder();
         content.append("\n")
                 .append("На коя позиция в класирането се намира отборът ")
                 .append("\"Liverpool FC\"")
@@ -85,98 +85,98 @@ public class QuestionUtilsTest {
                 .append("Premiere League")
                 .append(" в момента?");
 
-        List<String> answers = Arrays.asList("1","2","3");
-        Question expect = new Question(content.toString(), answers, 0);
+        final List<String> answers = Arrays.asList("1", "2", "3");
+        final Question expect = new Question(content.toString(), answers, 0);
 
-        Question result = QuestionsGenerator.questionForLeagueLeaderboard(TEST_RESPONSE2,"Premiere League",0);
+        final Question result = QuestionsGenerator.questionForLeagueLeaderboard(QuestionUtilsTest.TEST_RESPONSE2, "Premiere League", 0);
 
-        assertEquals(expect.toString(),result.toString());
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
-    public void testToCreateQuestionForLeagueScorers()  {
-        StringBuilder content = new StringBuilder();
+    public void testToCreateQuestionForLeagueScorers() {
+        final StringBuilder content = new StringBuilder();
         content.append("\n").append("Кой e голмайсторът на ")
                 .append("Premiere League")
                 .append(" през този сезон в момента?");
 
-        List<String> answers = Arrays.asList("\"Mohamed Salah\"","\"Pierre-Emerick Aubameyang\"","\"Harry Kane\"");
-        Question expect = new Question(content.toString(), answers, 0);
+        final List<String> answers = Arrays.asList("\"Mohamed Salah\"", "\"Pierre-Emerick Aubameyang\"", "\"Harry Kane\"");
+        final Question expect = new Question(content.toString(), answers, 0);
 
-        Question result = QuestionsGenerator.questionForLeagueScorers(TEST_RESPONSE,"Premiere League");
+        final Question result = QuestionsGenerator.questionForLeagueScorers(QuestionUtilsTest.TEST_RESPONSE, "Premiere League");
 
-        assertEquals(expect.toString(),result.toString());
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
-    public void testToCreateQuestionForPlayersGoalsNumber()  {
-        StringBuilder content = new StringBuilder();
+    public void testToCreateQuestionForPlayersGoalsNumber() {
+        final StringBuilder content = new StringBuilder();
         content.append("\n").append("Колко отбелязани гола има ")
                 .append("\"Mohamed Salah\"")
                 .append(" в ").append("Premiere League")
                 .append(" през този сезон?");
 
-        List<String> answers = Arrays.asList("16","15","14");
-        Question expect = new Question(content.toString(), answers, 0);
+        final List<String> answers = Arrays.asList("16", "15", "14");
+        final Question expect = new Question(content.toString(), answers, 0);
 
-        Question result = QuestionsGenerator.questionForPlayersGoalsNumber(TEST_RESPONSE,"Premiere League",0);
+        final Question result = QuestionsGenerator.questionForPlayersGoalsNumber(QuestionUtilsTest.TEST_RESPONSE, "Premiere League", 0);
 
-        assertEquals(expect.toString(),result.toString());
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
-    public void testToCreateQuestionForPlayersTeam()  {
-        StringBuilder content = new StringBuilder();
+    public void testToCreateQuestionForPlayersTeam() {
+        final StringBuilder content = new StringBuilder();
         content.append("\n").append("В кой отбор играе ").append("\"Mohamed Salah\"")
                 .append(", който има отбелязани ").append("16")
                 .append(" гола през този сезон?");
 
-        List<String> answers = Arrays.asList("\"Liverpool FC\"","\"Arsenal FC\"","\"Tottenham Hotspur FC\"");
-        Question expect = new Question(content.toString(), answers, 0);
+        final List<String> answers = Arrays.asList("\"Liverpool FC\"", "\"Arsenal FC\"", "\"Tottenham Hotspur FC\"");
+        final Question expect = new Question(content.toString(), answers, 0);
 
-        Question result = QuestionsGenerator.questionForPlayersTeam(TEST_RESPONSE,0);
+        final Question result = QuestionsGenerator.questionForPlayersTeam(QuestionUtilsTest.TEST_RESPONSE, 0);
 
-        assertEquals(expect.toString(),result.toString());
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
-    public void testToFetchPlayer(){
-        QuestionsGenerator.FootballPlayer expect =
-                new QuestionsGenerator.FootballPlayer("\"Mohamed Salah\"","\"Liverpool FC\"","16","1");
-        QuestionsGenerator.FootballPlayer result = QuestionsGenerator.fetchPlayer("["+TEST_RESPONSE+"]",1);
-        assertEquals(expect.toString(),result.toString());
+    public void testToFetchPlayer() {
+        final QuestionsGenerator.FootballPlayer expect =
+                new QuestionsGenerator.FootballPlayer("\"Mohamed Salah\"", "\"Liverpool FC\"", "16", "1");
+        final QuestionsGenerator.FootballPlayer result = QuestionsGenerator.fetchPlayer("[" + QuestionUtilsTest.TEST_RESPONSE + "]", 1);
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
-    public void testToFetchFirstTeam(){
-        QuestionsGenerator.Team expect =
-                new QuestionsGenerator.Team("\"Liverpool FC\"","1");
-        QuestionsGenerator.Team result = QuestionsGenerator.fetchTeam("["+TEST_RESPONSE2+"]",1);
-        assertEquals(expect.toString(),result.toString());
+    public void testToFetchFirstTeam() {
+        final QuestionsGenerator.Team expect =
+                new QuestionsGenerator.Team("\"Liverpool FC\"", "1");
+        final QuestionsGenerator.Team result = QuestionsGenerator.fetchTeam("[" + QuestionUtilsTest.TEST_RESPONSE2 + "]", 1);
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
-    public void testToFetchLastTeam(){
-        QuestionsGenerator.Team expect =
-                new QuestionsGenerator.Team("\"Tottenham Hotspur FC\"","3");
-        QuestionsGenerator.Team result = QuestionsGenerator.fetchTeam("["+TEST_RESPONSE2+"]",3);
-        assertEquals(expect.toString(),result.toString());
+    public void testToFetchLastTeam() {
+        final QuestionsGenerator.Team expect =
+                new QuestionsGenerator.Team("\"Tottenham Hotspur FC\"", "3");
+        final QuestionsGenerator.Team result = QuestionsGenerator.fetchTeam("[" + QuestionUtilsTest.TEST_RESPONSE2 + "]", 3);
+        assertEquals(expect.toString(), result.toString());
     }
 
     @Test
     public void testGenerateQuestionsSize() throws Exception {
-        RequestSender requestSenderMock = mock(RequestSender.class);
-        CompletableFuture<String> responseMockOne = CompletableFuture.completedFuture("["+TEST_RESPONSE2+"]");
-        CompletableFuture<String> responseMockTwo = CompletableFuture.completedFuture("["+TEST_RESPONSE+"]");
+        final RequestSender requestSenderMock = mock(RequestSender.class);
+        final CompletableFuture<String> responseMockOne = CompletableFuture.completedFuture("[" + QuestionUtilsTest.TEST_RESPONSE2 + "]");
+        final CompletableFuture<String> responseMockTwo = CompletableFuture.completedFuture("[" + QuestionUtilsTest.TEST_RESPONSE + "]");
 
-        when(requestSenderMock.getLeagueStanding("SA"))
+        when(services.RequestSender.getLeagueStanding("SA"))
                 .thenReturn(responseMockOne);
 
-        when(requestSenderMock.getTopScorer("SA"))
+        when(services.RequestSender.getTopScorer("SA"))
                 .thenReturn(responseMockTwo);
 
-        QuestionsGenerator test = new QuestionsGenerator();
-        assertEquals(4,   test.generate(requestSenderMock,2).size());
+        final QuestionsGenerator test = new QuestionsGenerator();
+        assertEquals(4, test.generate(requestSenderMock, 2).size());
     }
 
 }

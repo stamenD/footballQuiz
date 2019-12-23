@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
@@ -16,18 +15,18 @@ public class Client implements AutoCloseable {
     private static final String HOSTNAME = "127.0.0.1";
     private static final int BUFFER_SIZE = 1024;
     private static final int TIME_TO_SHUTDOWN = 1000;
-    private SocketChannel socketChannel;
-    private ByteBuffer byteBuffer;
-    private Selector selector;
-    private OutputStream outputStream;
-    private InputStream inputStream;
+    private final ByteBuffer byteBuffer;
+    private final Selector selector;
+    private final OutputStream outputStream;
+    private final InputStream inputStream;
+    private final SocketChannel socketChannel;
 
-    public Client(String hostname, int port, OutputStream out, InputStream in) throws IOException {
+    public Client(final String hostname, final int port, final OutputStream out, final InputStream in) throws IOException {
 
-        this.outputStream = out;
-        this.inputStream = in;
+        outputStream = out;
+        inputStream = in;
 
-        byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+        byteBuffer = ByteBuffer.allocate(Client.BUFFER_SIZE);
 
         selector = Selector.open();
 
@@ -36,45 +35,54 @@ public class Client implements AutoCloseable {
         System.out.println("Successful connection!");
     }
 
-    public void start() throws IOException {
+    public static void main(final String[] args) {
+        try (final Client client = new Client(Client.HOSTNAME, Client.SERVER_PORT, System.out, System.in)) {
+            client.start();
+        } catch (final Exception e) {
+            System.err.println("Unsuccessful connection!");
+            //e.printStackTrace();
+        }
+    }
+
+    void start() throws IOException {
 
         socketChannel.configureBlocking(false);
         socketChannel.register(selector, SelectionKey.OP_READ);
 
         //start selector works in another thread
-        Thread t = new Thread(this::run);
+        final Thread t = new Thread(this::run);
         t.start();
 
-        try (Scanner scanner = new Scanner(this.inputStream)) {
+        try (final Scanner scanner = new Scanner(inputStream)) {
 
             while (true) {
 
                 if (scanner.hasNextLine()) {
-                    String msg = scanner.nextLine();
+                    final String msg = scanner.nextLine();
                     if (!t.isAlive()) {
                         break;
                     }
 
                     if (msg.equals("q")) {
-                        Thread.sleep(TIME_TO_SHUTDOWN);
+                        Thread.sleep(Client.TIME_TO_SHUTDOWN);
                         t.interrupt();
                         break;
                     }
-                    for (String s : msg.split(System.lineSeparator())) {
+                    for (final String s : msg.split(System.lineSeparator())) {
                         //     System.err.println("I send : " + s);
                         send(s);
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("Unsuccessful write command!");
             t.interrupt();
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             System.err.println("Occurred shutdown error.");
         }
     }
 
-    private void send(String message) throws IOException {
+    private void send(final String message) throws IOException {
         byteBuffer.clear();
         byteBuffer.put((message + System.lineSeparator()).getBytes());
         byteBuffer.flip();
@@ -83,17 +91,17 @@ public class Client implements AutoCloseable {
         }
     }
 
-    private void read(SelectionKey key) throws IOException, RuntimeException {
-        SocketChannel currentSocketChannel = (SocketChannel) key.channel();
+    private void read(final SelectionKey key) throws IOException, RuntimeException {
+        final SocketChannel currentSocketChannel = (SocketChannel) key.channel();
         while (true) {
             byteBuffer.clear();
-            int r = currentSocketChannel.read(byteBuffer);
+            final int r = currentSocketChannel.read(byteBuffer);
             if (r == 0) {
                 break;
             }
             byteBuffer.flip();
-            String message = Charset.forName("UTF-8").decode(byteBuffer).toString();
-            this.outputStream.write(message.getBytes());
+            final String message = java.nio.charset.StandardCharsets.UTF_8.decode(byteBuffer).toString();
+            outputStream.write(message.getBytes());
         }
     }
 
@@ -111,42 +119,33 @@ public class Client implements AutoCloseable {
             int readyChannels = 0;
             try {
                 readyChannels = selector.select();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 System.err.println("Error in communication!");
             }
             if (readyChannels <= 0) {
                 continue;
             }
 
-            Set<SelectionKey> selectedKeys = this.selector.selectedKeys();
-            Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+            final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            final Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
             try {
                 while (keyIterator.hasNext()) {
-                    SelectionKey key = keyIterator.next();
+                    final SelectionKey key = keyIterator.next();
                     if (key.isReadable()) {
-                        this.read(key);
+                        read(key);
 
                     }
                     keyIterator.remove();
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 System.err.println("An error occurred on server side!");
 //                e.printStackTrace();
-            } catch (RuntimeException e) {
+            } catch (final RuntimeException e) {
                 System.err.println("Channel was broken!");
                 // e.printStackTrace();
             }
         }
 
-    }
-
-    public static void main(String[] args) {
-        try (Client client = new Client(HOSTNAME, SERVER_PORT, System.out, System.in)) {
-            client.start();
-        } catch (Exception e) {
-            System.err.println("Unsuccessful connection!");
-            //e.printStackTrace();
-        }
     }
 
 }

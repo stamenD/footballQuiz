@@ -1,29 +1,29 @@
-package GameComponents;
+package entities;
 
 import java.nio.channels.SocketChannel;
 
 public class Player {
     public static final int LENGTH_NAME = 8;
-
+    private final SocketChannel sc;
     private String username;
-    private SocketChannel sc;
     private Game currentGame;
 
-    public Player(SocketChannel sc) {
+    public Player(final SocketChannel sc) {
         this.sc = sc;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getUsername() {
         return username;
     }
 
+    public void setUsername(final String username) {
+        this.username = username;
+    }
+
     public String getUsernameFormat() {
-        if (username != null && username.length() < LENGTH_NAME)
-            return " " + username + " ".repeat(LENGTH_NAME - username.length());
+        if (username != null && username.length() < Player.LENGTH_NAME) {
+            return " " + username + " ".repeat(Player.LENGTH_NAME - username.length());
+        }
         else {
             return username;
         }
@@ -33,12 +33,12 @@ public class Player {
         return currentGame;
     }
 
-    public void setCurrentGame(Game currentGame) {
+    public void setCurrentGame(final Game currentGame) {
         this.currentGame = currentGame;
     }
 
-    public void sendAnswer(String answer) {
-        this.currentGame.getAnswer(this, answer);
+    public void sendAnswer(final String answer) {
+        currentGame.getAnswer(this, answer);
     }
 
     public SocketChannel getSocketChannel() {

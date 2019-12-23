@@ -1,15 +1,8 @@
-package Services;
+package services;
 
-import CustomExceptions.StreamError;
+import customexceptions.StreamError;
 
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.stream.Collectors;
 
 public class IOFile {
@@ -22,24 +15,25 @@ public class IOFile {
         System.out.println("NEW INSTANCE!");
     }
 
-    public IOFile(OutputStream whereToSave, InputStream fromWhereRead) {
+    public IOFile(final OutputStream whereToSave, final InputStream fromWhereRead) {
         this.whereToSave = whereToSave;
         this.fromWhereRead = fromWhereRead;
     }
 
-    synchronized public void saveGame(String result) {
+    synchronized public void saveGame(final String result) {
         PrintWriter objectStream = null;
         boolean isOutsideSetStream = false;
         try {
             if (whereToSave == null) {
-                whereToSave = new FileOutputStream(DEFAULT_PATH_TO_FILE, true);
-            } else {
+                whereToSave = new FileOutputStream(services.IOFile.DEFAULT_PATH_TO_FILE, true);
+            }
+            else {
                 isOutsideSetStream = true;
             }
             objectStream = new PrintWriter(whereToSave);
             objectStream.println(result);
             objectStream.flush();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.out.println("Not open correct stream!");
             throw new StreamError(e.getMessage());
         } finally {
@@ -62,13 +56,14 @@ public class IOFile {
         BufferedReader bufferedReader = null;
         try {
             if (fromWhereRead == null) {
-                fromWhereRead = new FileInputStream(DEFAULT_PATH_TO_FILE);
-            } else {
+                fromWhereRead = new FileInputStream(services.IOFile.DEFAULT_PATH_TO_FILE);
+            }
+            else {
                 isOutsideSetStream = true;
             }
             bufferedReader = new BufferedReader(new InputStreamReader(fromWhereRead));
             return bufferedReader.lines().collect(Collectors.joining(System.lineSeparator()));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.out.println("Not open correct stream!");
             throw new StreamError(e.getMessage());
         } finally {
@@ -78,7 +73,7 @@ public class IOFile {
                         fromWhereRead = null;
                         bufferedReader.close();
                     }
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     System.out.println("Not close correct stream!");
                     throw new StreamError(e.getMessage());
                 }

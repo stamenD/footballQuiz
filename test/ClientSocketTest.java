@@ -1,10 +1,9 @@
-import GameComponents.Game;
-import GameComponents.Player;
+import entities.Game;
+import entities.Player;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import static org.junit.Assert.assertTrue;
 
