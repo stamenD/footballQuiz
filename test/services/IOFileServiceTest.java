@@ -1,27 +1,28 @@
-import services.IOFile;
+package services;
+
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class FileServiceTest {
+public class IOFileServiceTest {
 
 
     @Test
     public void testSaveGameInformation() {
-        OutputStream outputStream = new ByteArrayOutputStream();
-        IOFile io = new IOFile(outputStream, null);
+        final OutputStream outputStream = new ByteArrayOutputStream();
+        final IOFileService io = new IOFileService(outputStream, null);
         io.saveGame("DUMMY GAME INFORMATION");
-        String result = outputStream.toString();
+        final String result = outputStream.toString();
         try {
             outputStream.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("Error occurred when close stream");
         }
         assertEquals("DUMMY GAME INFORMATION", result.trim());
@@ -29,14 +30,14 @@ public class FileServiceTest {
 
     @Test
     public void testSaveMultipleGameInformation() {
-        OutputStream outputStream = new ByteArrayOutputStream();
-        IOFile io = new IOFile(outputStream, null);
+        final OutputStream outputStream = new ByteArrayOutputStream();
+        final IOFileService io = new IOFileService(outputStream, null);
         io.saveGame("DUMMY GAME INFORMATION1");
         io.saveGame("DUMMY GAME INFORMATION2");
-        String result = outputStream.toString();
+        final String result = outputStream.toString();
         try {
             outputStream.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("Error occurred when close stream");
         }
         assertEquals("DUMMY GAME INFORMATION1" + System.lineSeparator() + "DUMMY GAME INFORMATION2", result.trim());
@@ -44,12 +45,12 @@ public class FileServiceTest {
 
     @Test
     public void testReadGamesInformation() {
-        OutputStream outputStream = new ByteArrayOutputStream();
-        InputStream inputStream = new ByteArrayInputStream("result1 result2".getBytes());
-        IOFile io = new IOFile(null, inputStream);
+        final OutputStream outputStream = new ByteArrayOutputStream();
+        final InputStream inputStream = new ByteArrayInputStream("result1 result2".getBytes());
+        final IOFileService io = new IOFileService(null, inputStream);
         try {
             outputStream.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("Error occurred when close stream");
         }
         assertEquals("result1 result2", io.getAllPlayedGames().trim());
@@ -57,7 +58,7 @@ public class FileServiceTest {
 
     @Test
     public void testReadGamesInformationFromDefaultDir() {
-        IOFile io = new IOFile(null, null);
+        final IOFileService io = new IOFileService(null, null);
         io.saveGame("test1");
         assertTrue(io.getAllPlayedGames().trim().contains("test1"));
     }

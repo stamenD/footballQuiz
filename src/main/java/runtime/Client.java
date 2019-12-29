@@ -1,3 +1,5 @@
+package runtime;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,7 +24,6 @@ public class Client implements AutoCloseable {
     private final SocketChannel socketChannel;
 
     public Client(final String hostname, final int port, final OutputStream out, final InputStream in) throws IOException {
-
         outputStream = out;
         inputStream = in;
 

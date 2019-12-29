@@ -1,5 +1,6 @@
 package services;
 
+import entities.Game;
 import entities.Question;
 
 import java.util.ArrayList;
@@ -35,15 +36,15 @@ public class QuestionsGenerator {
 //        System.out.println("Position " + number + ":");
         final FootballPlayer result = new FootballPlayer();
         result.leaderboardGoal = String.valueOf(number);
-        result.name = players[number].split("name\\\":")[1].split(",\\\"")[0];
-        result.team = players[number].split("name\\\":")[2].split(",\\\"")[0].split("}")[0];
-        result.goals = players[number].split("numberOfGoals\\\":")[1].split(",\\\"")[0].split("}")[0];
+        result.name = players[number].split("name\":")[1].split(",\"")[0];
+        result.team = players[number].split("name\":")[2].split(",\"")[0].split("}")[0];
+        result.goals = players[number].split("numberOfGoals\":")[1].split(",\"")[0].split("}")[0];
         //System.out.println(result);
         return result;
     }
 
     public static Team fetchTeam(final String json, final int number) {
-        final Pattern pattern = Pattern.compile("\\[.*\\]");
+        final Pattern pattern = Pattern.compile("\\[.*]");
         Matcher matcher = pattern.matcher(json);
         String standings = "";
         while (matcher.find()) {
@@ -58,64 +59,62 @@ public class QuestionsGenerator {
         final Team result = new Team();
         final String[] teams = table.split("position");
         result.position = String.valueOf(number);
-        result.name = teams[number].split("name\\\":")[1].split(",\\\"")[0];
+        result.name = teams[number].split("name\":")[1].split(",\"")[0];
 //        System.out.println(teams[number].split("name\\\":")[1].split(",\\\"")[0]);
         return result;
     }
 
     public static Question questionForPlayersTeam(final String json, final int notRandomIndex) {
-        final FootballPlayer[] footballers = new FootballPlayer[services.QuestionsGenerator.NUMBER_ANSWERS];
+        final FootballPlayer[] footballers = new FootballPlayer[QuestionsGenerator.NUMBER_ANSWERS];
         for (int i = 0; i < footballers.length; i++) {
-            footballers[i] = services.QuestionsGenerator.fetchPlayer(json, i + 1);
+            footballers[i] = QuestionsGenerator.fetchPlayer(json, i + 1);
         }
 
         final List<String> answers = new ArrayList<>();
-        for (final FootballPlayer footballer : footballers
-        ) {
+        for (final FootballPlayer footballer : footballers) {
             answers.add(footballer.team);
         }
         final StringBuilder content = new StringBuilder();
 
         final int correctAnswerIndex;
         if (notRandomIndex == -1) {
-            correctAnswerIndex = new Random().nextInt(services.QuestionsGenerator.NUMBER_ANSWERS);
+            correctAnswerIndex = new Random().nextInt(QuestionsGenerator.NUMBER_ANSWERS);
         }
         else {
             correctAnswerIndex = notRandomIndex;
         }
 
-        content.append("\n").append("В кой отбор играе ").append(footballers[correctAnswerIndex].name)
-                .append(", който има отбелязани ").append(footballers[correctAnswerIndex].goals)
-                .append(" гола през този сезон?");
+        content.append("\n").append("For which team does ").append(footballers[correctAnswerIndex].name)
+                .append(" play(he has scored ").append(footballers[correctAnswerIndex].goals)
+                .append(" goals this season)?");
         return new Question(content.toString(), answers, correctAnswerIndex);
     }
 
     public static Question questionForPlayersGoalsNumber(final String json, final String league, final int notRandomIndex) {
         final int correctAnswerIndex;
         if (notRandomIndex == -1) {
-            correctAnswerIndex = new Random().nextInt(services.QuestionsGenerator.NUMBER_ANSWERS);
+            correctAnswerIndex = new Random().nextInt(QuestionsGenerator.NUMBER_ANSWERS);
         }
         else {
             correctAnswerIndex = notRandomIndex;
         }
-        final FootballPlayer result = services.QuestionsGenerator.fetchPlayer(json, correctAnswerIndex + 1);
-        final StringBuilder content = new StringBuilder();
-        content.append("\n").append("Колко отбелязани гола има ")
-                .append(result.name)
-                .append(" в ").append(league)
-                .append(" през този сезон?");
+        final FootballPlayer result = QuestionsGenerator.fetchPlayer(json, correctAnswerIndex + 1);
         final List<String> answers = new ArrayList<>();
         answers.add(result.goals);
         answers.add(String.valueOf(Integer.parseInt(result.goals) - 1));
         answers.add(String.valueOf(Integer.parseInt(result.goals) - 2));
-        return new Question(content.toString(), answers, 0);
+        final String content = "\n" + "How many goals did " +
+                result.name +
+                " score in " + league +
+                " during this season?";
+        return new Question(content, answers, 0);
     }
 
     public static Question questionForLeagueScorers(final String json, final String league) {
 
-        final FootballPlayer[] footballers = new FootballPlayer[services.QuestionsGenerator.NUMBER_ANSWERS];
+        final FootballPlayer[] footballers = new FootballPlayer[QuestionsGenerator.NUMBER_ANSWERS];
         for (int i = 0; i < footballers.length; i++) {
-            footballers[i] = services.QuestionsGenerator.fetchPlayer(json, i + 1);
+            footballers[i] = QuestionsGenerator.fetchPlayer(json, i + 1);
         }
 
         final List<String> answers = new ArrayList<>();
@@ -123,75 +122,78 @@ public class QuestionsGenerator {
         ) {
             answers.add(footballer.name);
         }
-        final StringBuilder content = new StringBuilder();
-        content.append("\n").append("Кой e голмайсторът на ")
-                .append(league)
-                .append(" през този сезон в момента?");
 
-        return new Question(content.toString(), answers, 0);
+        final String content = "\n" + "Who is the top scorer in " +
+                league +
+                " at the moment?";
+        return new Question(content, answers, 0);
     }
 
     public static Question questionForLeagueLeaderboard(final String json, final String league, final int notRandomIndex) {
         final int correctAnswerIndex;
         if (notRandomIndex == -1) {
-            correctAnswerIndex = new Random().nextInt(services.QuestionsGenerator.NUMBER_ANSWERS);
+            correctAnswerIndex = new Random().nextInt(QuestionsGenerator.NUMBER_ANSWERS);
         }
         else {
             correctAnswerIndex = notRandomIndex;
         }
-        final Team result = services.QuestionsGenerator.fetchTeam(json, correctAnswerIndex + 1);
-        final StringBuilder content = new StringBuilder();
-        content.append("\n")
-                .append("На коя позиция в класирането се намира отборът ")
-                .append(result.name)
-                .append(" в ")
-                .append(league)
-                .append(" в момента?");
+        final Team result = QuestionsGenerator.fetchTeam(json, correctAnswerIndex + 1);
         final List<String> answers = new ArrayList<>();
         answers.add(result.position);
         answers.add(String.valueOf(Integer.parseInt(result.position) + 1));
         answers.add(String.valueOf(Integer.parseInt(result.position) + 2));
-        return new Question(content.toString(), answers, 0);
+        final String content = "\n" +
+                "In which position is " +
+                result.name +
+                " in " +
+                league +
+                " at the moment?";
+        return new Question(content, answers, 0);
     }
 
-    static synchronized public List<Question> generate(final services.RequestSender retriever, final int notRandomIndex) throws Exception {
+    static synchronized public void generate(final Game game, final int certainIndex) {
         final League leagueFirstQuestion;
         final League leagueSecondQuestion;
-        if (notRandomIndex == -1) {
-            leagueFirstQuestion = services.QuestionsGenerator.LEAGUE_CODES.get(new Random().nextInt(services.QuestionsGenerator.LEAGUE_CODES.size() - 1));
-            leagueSecondQuestion = services.QuestionsGenerator.LEAGUE_CODES.get(new Random().nextInt(services.QuestionsGenerator.LEAGUE_CODES.size()));
+        if (certainIndex == -1) {
+            leagueFirstQuestion = QuestionsGenerator.LEAGUE_CODES.get(new Random().nextInt(QuestionsGenerator.LEAGUE_CODES.size() - 1));
+            leagueSecondQuestion = QuestionsGenerator.LEAGUE_CODES.get(new Random().nextInt(QuestionsGenerator.LEAGUE_CODES.size()));
         }
         else {
-            leagueFirstQuestion = services.QuestionsGenerator.LEAGUE_CODES.get(notRandomIndex);
-            leagueSecondQuestion = services.QuestionsGenerator.LEAGUE_CODES.get(notRandomIndex);
+            leagueFirstQuestion = QuestionsGenerator.LEAGUE_CODES.get(certainIndex);
+            leagueSecondQuestion = QuestionsGenerator.LEAGUE_CODES.get(certainIndex);
         }
 
 
-        final List<Question> questions = new ArrayList<>();
+        final var questions = game.getQuestions();
 
-        final CompletableFuture<String> future1 = services.RequestSender.getLeagueStanding(leagueFirstQuestion.code);
+        final var questionsPartOne =
+                RequestSender.getLeagueStanding(leagueFirstQuestion.code)
+                        .thenApply(s -> QuestionsGenerator.questionForLeagueLeaderboard(s, leagueFirstQuestion.name, -1))
+                        .thenAccept(questions::add);
 
-        future1.thenApply(s -> services.QuestionsGenerator.questionForLeagueLeaderboard(s, leagueFirstQuestion.name, -1))
-                .thenAccept(questions::add);
+        final var questionsPartTwo =
+                RequestSender.getTopScorer(leagueSecondQuestion.code)
+                        .thenApply(resp -> {
+                            questions.add(QuestionsGenerator.questionForPlayersTeam(resp, -1));
+                            return resp;
+                        })
+                        .thenApply(resp -> {
+                            questions.add(QuestionsGenerator.questionForLeagueScorers(resp, leagueSecondQuestion.name));
+                            return resp;
+                        })
+                        .thenAccept(resp -> {
+                            questions.add(QuestionsGenerator.questionForPlayersGoalsNumber(resp, leagueSecondQuestion.name, -1));
+                        });
 
-        final CompletableFuture<String> future2 = services.RequestSender.getTopScorer(leagueSecondQuestion.code);
-
-        future2.thenApply(resp -> {
-            questions.add(QuestionsGenerator.questionForPlayersTeam(resp, -1));
-            return resp;
-        }).thenApply(resp -> {
-            questions.add(QuestionsGenerator.questionForLeagueScorers(resp, leagueSecondQuestion.name));
-            return resp;
-        }).thenAccept(resp -> {
-            questions.add(QuestionsGenerator.questionForPlayersGoalsNumber(resp, leagueSecondQuestion.name, -1));
+        CompletableFuture.allOf(questionsPartOne, questionsPartTwo).whenCompleteAsync((s, throwable) -> {
+            if (throwable != null) {
+                game.exceptionallyFinishGame(throwable);
+            }
+            else {
+                game.beginSendingQuestions();
+            }
         });
-
-
-        future1.join();
-        future2.join();
         System.out.println("----" + questions.size());
-
-        return questions;
     }
 
     static public class FootballPlayer {

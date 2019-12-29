@@ -2,20 +2,27 @@ package services;
 
 import customexceptions.StreamError;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.stream.Collectors;
 
-public class IOFile {
+public class IOFileService {
     private final static String DEFAULT_PATH_TO_FILE = "result.txt";
     private OutputStream whereToSave;
     private InputStream fromWhereRead;
 
-    public IOFile() {
+    public IOFileService() {
         this(null, null);
         System.out.println("NEW INSTANCE!");
     }
 
-    public IOFile(final OutputStream whereToSave, final InputStream fromWhereRead) {
+    IOFileService(final OutputStream whereToSave, final InputStream fromWhereRead) {
         this.whereToSave = whereToSave;
         this.fromWhereRead = fromWhereRead;
     }
@@ -25,7 +32,7 @@ public class IOFile {
         boolean isOutsideSetStream = false;
         try {
             if (whereToSave == null) {
-                whereToSave = new FileOutputStream(services.IOFile.DEFAULT_PATH_TO_FILE, true);
+                whereToSave = new FileOutputStream(IOFileService.DEFAULT_PATH_TO_FILE, true);
             }
             else {
                 isOutsideSetStream = true;
@@ -38,25 +45,26 @@ public class IOFile {
             throw new StreamError(e.getMessage());
         } finally {
             if (!isOutsideSetStream) {
-//                try {
-                if (objectStream != null) {
-                    whereToSave = null;
-                    objectStream.close();
+                try {
+                    if (objectStream != null) {
+                        whereToSave.close();
+                        objectStream.close();
+                        whereToSave = null;
+                    }
+                } catch (final IOException e) {
+                    System.out.println("Not close correct stream!");
+                    throw new StreamError(e.getMessage());
                 }
-//                } catch (IOException e) {
-//                    System.out.println("Not close correct stream!");
-//                    throw new StreamError(e.getMessage());
-//                }
             }
         }
     }
 
-    synchronized public String getAllPlayedGames() {
+    synchronized String getAllPlayedGames() {
         boolean isOutsideSetStream = false;
         BufferedReader bufferedReader = null;
         try {
             if (fromWhereRead == null) {
-                fromWhereRead = new FileInputStream(services.IOFile.DEFAULT_PATH_TO_FILE);
+                fromWhereRead = new FileInputStream(IOFileService.DEFAULT_PATH_TO_FILE);
             }
             else {
                 isOutsideSetStream = true;
@@ -70,8 +78,9 @@ public class IOFile {
             if (!isOutsideSetStream) {
                 try {
                     if (bufferedReader != null) {
-                        fromWhereRead = null;
+                        fromWhereRead.close();
                         bufferedReader.close();
+                        fromWhereRead = null;
                     }
                 } catch (final IOException e) {
                     System.out.println("Not close correct stream!");

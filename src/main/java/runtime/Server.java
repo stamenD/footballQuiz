@@ -1,7 +1,8 @@
-import customexceptions.NotFoundFreeRoom;
-import customexceptions.NotSetUsername;
+package runtime;
+
 import entities.Game;
 import entities.Player;
+import services.ServerExecutorCommand;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -20,10 +21,8 @@ public class Server implements AutoCloseable {
 
     static final int SERVER_PORT = 4444;
     private static final int BUFFER_SIZE = 1024;
-
     private final Map<String, Game> rooms;
     private final Map<SocketChannel, Player> onlineUsers;
-
     private final Selector selector;
     private final ByteBuffer commandBuffer;
     private final ServerSocketChannel serverSocketChannel;
@@ -47,6 +46,14 @@ public class Server implements AutoCloseable {
         } catch (final Exception e) {
             System.err.println("An error has occurred!");
         }
+    }
+
+    public Map<String, Game> getRooms() {
+        return rooms;
+    }
+
+    public Map<SocketChannel, Player> getOnlineUsers() {
+        return onlineUsers;
     }
 
     void start() throws IOException {
@@ -107,12 +114,12 @@ public class Server implements AutoCloseable {
 
             final String message = java.nio.charset.StandardCharsets.UTF_8.decode(commandBuffer).toString();
 
-            //check whether player is playing in this moment
+            //check whether the player is playing in this moment
             if (onlineUsers.get(currentSocketChannel).getCurrentGame() != null) {
                 onlineUsers.get(currentSocketChannel).sendAnswer(message);
             }
             else {
-                final String result = executeCommand(message, currentSocketChannel);
+                final String result = ServerExecutorCommand.executeCommand(this, message, currentSocketChannel);
                 //System.out.println("data to send:" + result);
                 commandBuffer.clear();
                 commandBuffer.put((result + System.lineSeparator()).getBytes());
@@ -146,50 +153,6 @@ public class Server implements AutoCloseable {
 
     private void refreshRooms() {
         rooms.entrySet().removeIf(stringGameEntry -> stringGameEntry.getValue().isFinished());
-    }
-
-    private String executeCommand(final String receiveMsg, final SocketChannel caller) {
-        //  System.out.print("->>>" + receiveMsg + ".");
-        final String[] cmdParts = receiveMsg.split("\\s+");
-        String answer = null;
-        if (cmdParts.length > 0) {
-            final String command = cmdParts[0].trim();
-            try {
-                if (command.equalsIgnoreCase("nickname") && cmdParts.length == 2) {
-                    answer = services.ServerExecutorCommand.setNickname(cmdParts, onlineUsers, caller);
-                }
-                else if (onlineUsers.get(caller).getUsername() != null) {
-                    if (command.equalsIgnoreCase("create-game") && cmdParts.length == 2) {
-                        answer = services.ServerExecutorCommand.createGame(cmdParts, onlineUsers, caller, rooms);
-                    }
-                    else if (command.equalsIgnoreCase("join-game")) {
-                        answer = services.ServerExecutorCommand.joinInGame(cmdParts, onlineUsers, caller, rooms);
-                    }
-                    else if (command.equalsIgnoreCase("list-rooms") && cmdParts.length == 1) {
-                        answer = services.ServerExecutorCommand.listCurrentGames(rooms);
-                    }
-                    else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
-                        answer = services.ServerExecutorCommand.showHistoryGames();
-                    }
-                    else {
-                        answer = "Unknown command";
-                    }
-                }
-                else {
-                    throw new customexceptions.NotSetUsername();
-                }
-            } catch (final NotFoundFreeRoom e) {
-                answer = "There are not free rooms!";
-                return answer;
-            } catch (final NotSetUsername e) {
-                answer = "Please set your nickname to continue!";
-                return answer;
-            }
-        }
-        if (answer == null) {
-            answer = "Unknown command";
-        }
-        return answer;
     }
 
     @Override

@@ -1,25 +1,27 @@
-import entities.Game;
-import entities.Player;
-import services.IOFile;
+package entities;
+
 import org.junit.Test;
+import services.IOFileService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class PlayerTest {
 
     @Test
     public void testToCreatePlayer() {
-        Player one = new Player(null);
+        final Player one = new Player(null);
         assertNotNull(one);
         assertNull(one.getSocketChannel());
     }
 
     @Test
     public void testToSetPlayerName() {
-        Player one = new Player(null);
+        final Player one = new Player(null);
         one.setUsername("123");
         assertEquals("123", one.getUsername());
         assertNotNull(one.getUsername());
@@ -27,18 +29,18 @@ public class PlayerTest {
 
     @Test
     public void testToSetPlayerGame() {
-        Player one = new Player(null);
-        Game randomGame = new Game("f", one, new IOFile());
+        final Player one = new Player(null);
+        final Game randomGame = new Game("f", one, new IOFileService());
         one.setCurrentGame(randomGame);
         assertEquals(randomGame, one.getCurrentGame());
     }
 
     @Test
     public void testToGetFormattedPlayerName() {
-        Player one = new Player(null);
-        Player two = new Player(null);
+        final Player one = new Player(null);
+        final Player two = new Player(null);
 
-        StringBuilder name = new StringBuilder();
+        final StringBuilder name = new StringBuilder();
         while (name.length() < Player.LENGTH_NAME) {
             name.append("t");
         }
@@ -49,14 +51,14 @@ public class PlayerTest {
     }
 
     @Test
-    public void testToPlayerToSendAnswers(){
+    public void testToPlayerToSendAnswers() {
 
-        Game mockGame = mock(Game.class);
+        final Game mockGame = mock(Game.class);
 
-        Player one = new Player(null);
+        final Player one = new Player(null);
         one.setCurrentGame(mockGame);
         one.sendAnswer("dummy Answer");
 
-        verify(mockGame, times(1)).getAnswer(one,"dummy Answer");
+        verify(mockGame, times(1)).getAnswer(one, "dummy Answer");
     }
 }

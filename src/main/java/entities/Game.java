@@ -1,25 +1,23 @@
 package entities;
 
-import customexceptions.NotLoadedQuestions;
 import customexceptions.StreamError;
-import services.IOFile;
+import services.IOFileService;
 import services.QuestionsGenerator;
-import services.RequestSender;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
 public class Game {
     public static final int LENGTH_NAME = 5;
-
-
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final int BUFFER_SIZE = 1024;
-    private static final int TIME_FOR_THINKING = 15000;
+    private static final int TIME_FOR_THINKING = 10000; // milliseconds
     private static final String ALREADY_ANSWERED = "You have already answered!";
     private static final String SUCCESSFUL_GET_ANSWER = "You have answered: ";
     private static final String GET_READY_MESSAGE = "The GAME will start soon! Get ready! :)";
@@ -28,26 +26,42 @@ public class Game {
     private static final String LOSE_MESSAGE = "You LOSE!";
     private static final String DRAW_MESSAGE = "DRAW!";
     private static final String WAITING_MESSAGE = "Waiting a second player!";
-    private static final QuestionsGenerator GENERATOR = new QuestionsGenerator();
-
     private final ByteBuffer commandBuffer;
+    private final int timeForThinking;
     private final String nameRoom;
     private final Player firstPlayer;
-    private final IOFile recorder;
+    private final IOFileService recorder;
+    private final List<Question> questions = new LinkedList<>();
     private Player secondPlayer;
-    private List<Question> questions;
     private String[] answersFromFirstPlayer;
     private String[] answersFromSecondPlayer;
     private volatile int index;
     private boolean isFinished;
     private boolean isOpenToGetAnswers;
-
-    public Game(final String nameRoom, final Player firstPlayer, final IOFile recorder) {
+    public Game(final String nameRoom, final int timeForThinking, final Player firstPlayer, final IOFileService recorder) {
+        this.timeForThinking = timeForThinking;
         this.recorder = recorder;
         this.nameRoom = nameRoom;
         this.firstPlayer = firstPlayer;
         firstPlayer.setCurrentGame(this);
         commandBuffer = ByteBuffer.allocate(Game.BUFFER_SIZE);
+    }
+
+    public Game(final String nameRoom, final Player firstPlayer, final IOFileService recorder) {
+        timeForThinking = TIME_FOR_THINKING;
+        this.recorder = recorder;
+        this.nameRoom = nameRoom;
+        this.firstPlayer = firstPlayer;
+        firstPlayer.setCurrentGame(this);
+        commandBuffer = ByteBuffer.allocate(Game.BUFFER_SIZE);
+    }
+
+    public int getTimeForThinking() {
+        return timeForThinking;
+    }
+
+    public List<Question> getQuestions() {
+        return questions;
     }
 
     public boolean isFree() {
@@ -96,46 +110,44 @@ public class Game {
         sendMessageToPlayer(secondPlayer, msg);
     }
 
-    private void loadQuestions() {
-        try {
-            questions = services.QuestionsGenerator.generate(new RequestSender(), -1);
-        } catch (final Exception e) {
-            throw new NotLoadedQuestions(e.getMessage());
-        }
-
-    }
-
     public void startGame() {
+        System.out.println("current Thread : " + Thread.currentThread());
         sendMessageToTwoPlayers(Game.GET_READY_MESSAGE);
-        final Thread t = new Thread(() -> {
-            try {
-                loadQuestions();
-
-                index = -1;
-                answersFromFirstPlayer = new String[questions.size()];
-                answersFromSecondPlayer = new String[questions.size()];
-                for (final Question question : questions) {
-                    sendMessageToTwoPlayers(question.toString());
-                    isOpenToGetAnswers = true;
-                    index = index + 1;
-                    try {
-                        Thread.sleep(Game.TIME_FOR_THINKING);
-                    } catch (final InterruptedException e) {
-                        System.out.println("Аn error occurred in current game!");
-                    }
-                }
-                sendResult();
-            } catch (final NotLoadedQuestions e) {
-                System.out.println("Can not load questions!");
-                sendMessageToTwoPlayers(Game.ERROR_MASSAGE);
-            } finally {
-                firstPlayer.setCurrentGame(null);
-                secondPlayer.setCurrentGame(null);
-            }
-
-        });
-        t.start();
+        QuestionsGenerator.generate(this, -1);
     }
+
+    public void exceptionallyFinishGame(final Throwable e) {
+        System.out.println("Can not load questions! " + Arrays.toString(e.getStackTrace()));
+        sendMessageToTwoPlayers(Game.ERROR_MASSAGE);
+        firstPlayer.setCurrentGame(null);
+        secondPlayer.setCurrentGame(null);
+        isFinished = true;
+    }
+
+    public void beginSendingQuestions() {
+//        final Thread t = new Thread(() -> {
+        System.out.println("current Thread here : " + Thread.currentThread());
+        index = -1;
+        answersFromFirstPlayer = new String[questions.size()];
+        answersFromSecondPlayer = new String[questions.size()];
+        for (final Question question : questions) {
+            sendMessageToTwoPlayers(question.toString());
+            isOpenToGetAnswers = true;
+            index = index + 1;
+            try {
+                Thread.sleep(timeForThinking);
+            } catch (final InterruptedException e) {
+                System.out.println("Аn error occurred in current game!");
+            }
+        }
+        sendResult();
+        firstPlayer.setCurrentGame(null);
+        secondPlayer.setCurrentGame(null);
+
+//        });
+//        t.start();
+    }
+
 
     public boolean isFinished() {
         return isFinished;
@@ -145,8 +157,9 @@ public class Game {
         final int first = calculateCorrectAnswers(answersFromFirstPlayer);
         final int second = calculateCorrectAnswers(answersFromSecondPlayer);
 
-        final String result = String.format("Name:%s | Date:%s | %s (%d)  :  (%d) %s ",
+        final String result = String.format("Name:%s | Speed:%s | Date:%s | %s (%d)  :  (%d) %s ",
                                             nameRoom,
+                                            timeForThinking,
                                             LocalDateTime.now().format(Game.FORMATTER),
                                             firstPlayer.getUsername(), first,
                                             second, secondPlayer.getUsername());
@@ -173,14 +186,13 @@ public class Game {
     }
 
     private int calculateCorrectAnswers(final String[] answers) {
-        System.out.println("-<<<<  " + answers);
-        System.out.println("-<<<<  " + questions.get(0));
         int count = 0;
         int innerIndex = 0;
         for (final String ans : answers) {
             System.out.println(innerIndex);
-            System.out.println(ans);
-            if (ans != null && ans.equals(String.valueOf(questions.get(innerIndex).getCorrectAnswerIndex()))) {
+            System.out.println(">>>>" + ans);
+            System.out.println("--->" + String.valueOf(questions.get(innerIndex).getCorrectAnswerIndex()).trim());
+            if (ans != null && ans.trim().equals(String.valueOf(questions.get(innerIndex).getCorrectAnswerIndex()).trim())) {
                 count++;
             }
             innerIndex++;
@@ -188,7 +200,7 @@ public class Game {
         return count;
     }
 
-    public void getAnswer(final Player from, final String answer) {
+    void getAnswer(final Player from, final String answer) {
         if (isOpenToGetAnswers) {
             if (!answer.equals(" ") && !answer.equals(System.lineSeparator())) {
                 System.out.println("answer :" + answer);

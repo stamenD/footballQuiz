@@ -1,17 +1,77 @@
 package services;
 
 import customexceptions.NotFoundFreeRoom;
+import customexceptions.NotSetUsername;
+import customexceptions.StreamError;
 import entities.Game;
 import entities.Player;
+import runtime.Server;
 
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 
 public class ServerExecutorCommand {
-    private static final IOFile RECORDER = new IOFile();
+    private static final IOFileService RECORDER = new IOFileService();
 
 
-    public static String setNickname(
+    public static String executeCommand(final Server server, final String receiveMsg, final SocketChannel caller) {
+        //  System.out.print("->>>" + receiveMsg + ".");
+        final String[] cmdParts = receiveMsg.split("\\s+");
+        String answer = null;
+        if (cmdParts.length > 0) {
+            final String command = cmdParts[0].trim();
+            try {
+                if (command.equalsIgnoreCase("nickname") && cmdParts.length == 2) {
+                    answer = ServerExecutorCommand.setNickname(cmdParts, server.getOnlineUsers(), caller);
+                }
+                else if (server.getOnlineUsers().get(caller).getUsername() != null) {
+                    if (command.equalsIgnoreCase("create-game")) {
+                        answer = ServerExecutorCommand.createGame(cmdParts, server.getOnlineUsers(), caller, server.getRooms());
+                    }
+                    else if (command.equalsIgnoreCase("join-game")) {
+                        answer = ServerExecutorCommand.joinInGame(cmdParts, server.getOnlineUsers(), caller, server.getRooms());
+                    }
+                    else if (command.equalsIgnoreCase("list-rooms") && cmdParts.length == 1) {
+                        answer = ServerExecutorCommand.listCurrentGames(server.getRooms());
+                    }
+                    else if (command.equalsIgnoreCase("show-history") && cmdParts.length == 1) {
+                        answer = ServerExecutorCommand.showHistoryGames();
+                    }
+                    else {
+                        answer = "Unknown command :(.Use one of these:" + "\n" +
+                                "create-game <name_room> [<time for thinking in milliseconds>]" + "\n" +
+                                "join-game [<name_rom>]" + "\n" +
+                                "list-rooms" + "\n" +
+                                "show-history" + "\n";
+                    }
+                }
+                else {
+                    throw new customexceptions.NotSetUsername();
+                }
+            } catch (final StreamError e) {
+                return e.getMessage();
+            } catch (final NotFoundFreeRoom e) {
+                answer = "There are not free rooms!";
+                return answer;
+            } catch (final NotSetUsername e) {
+                answer = "Please set your nickname to continue! \n" +
+                        "nickname <something>";
+                return answer;
+            }
+
+        }
+        if (answer == null) {
+            answer = "Unknown command :(.Use one of these:" + "\n" +
+                    "create-game <name_room> [<time for thinking in milliseconds>]" + "\n" +
+                    "join-game [<name_rom>]" + "\n" +
+                    "list-rooms" + "\n" +
+                    "show-history" + "\n";
+        }
+        return answer;
+    }
+
+
+    static String setNickname(
             final String[] cmdParts,
             final Map<SocketChannel, Player> onlineUsers,
             final SocketChannel caller) {
@@ -37,31 +97,42 @@ public class ServerExecutorCommand {
         return answer;
     }
 
-    public static String createGame(
+    static String createGame(
             final String[] cmdParts,
             final Map<SocketChannel, Player> onlineUsers,
             final SocketChannel caller,
             final Map<String, Game> games) {
         String answer = null;
         if (cmdParts[1].length() < Game.LENGTH_NAME) {
-
             if (games.values().stream()
                     .anyMatch(game -> game.getNameRoom().equals(cmdParts[1]))) {
                 answer = "This room is already created!";
             }
             else {
-                games.put(cmdParts[1], new Game(cmdParts[1], onlineUsers.get(caller), services.ServerExecutorCommand.RECORDER));
+                final Game newGame;
+                if (cmdParts.length == 3) {
+                    try {
+                        newGame = new Game(cmdParts[1], Integer.parseInt(cmdParts[2]), onlineUsers.get(caller), ServerExecutorCommand.RECORDER);
+                    } catch (final NumberFormatException e) {
+                        return "Second argument is not a number!";
+                    }
+                }
+                else {
+                    newGame = new Game(cmdParts[1], onlineUsers.get(caller), ServerExecutorCommand.RECORDER);
+                }
+                games.put(cmdParts[1], newGame);
                 answer = "Successful create room!";
             }
-
         }
         else {
-            answer = "Room name must be smaller than " + Game.LENGTH_NAME + " characters!";
+            return "Room name must be smaller than " + Game.LENGTH_NAME + " characters!";
         }
+
+
         return answer;
     }
 
-    public static String joinInGame(
+    static String joinInGame(
             final String[] cmdParts,
             final Map<SocketChannel, Player> onlineUsers,
             final SocketChannel caller,
@@ -95,17 +166,19 @@ public class ServerExecutorCommand {
 
     }
 
-    public static String listCurrentGames(final Map<String, Game> games) {
+    static String listCurrentGames(final Map<String, Game> games) {
         final StringBuilder sb = new StringBuilder();
-        sb.append("| NAME | CREATOR | ISFREE |")
+        sb.append("| NAME | SPEED | CREATOR | ISFREE |")
                 .append("\n")
-                .append("|------+---------+--------|")
+                .append("|------+-------+---------+--------|")
                 .append("\n");
         if (games != null) {
             for (final Game game : games.values()) {
                 sb.append("|")
                         .append(game.getNameRoomFormatted())
-                        .append("|")
+                        .append("| ")
+                        .append(game.getTimeForThinking())
+                        .append(" |")
                         .append(game.getFirstPlayer().getUsernameFormat())
                         .append("|");
                 if (game.isFree()) {
@@ -117,11 +190,11 @@ public class ServerExecutorCommand {
                 sb.append("|").append("\n");
             }
         }
-        sb.append("|------+---------+--------|").append("\n");
+        sb.append("|------+-------+---------+--------|").append("\n");
         return sb.toString();
     }
 
-    public static String showHistoryGames() {
+    private static String showHistoryGames() {
         return ServerExecutorCommand.RECORDER.getAllPlayedGames();
     }
 
