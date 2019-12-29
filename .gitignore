@@ -12,9 +12,7 @@
 *.zip
 *.tar.gz
 *.rar
-*.iml
 
 *.txt
 .idea/
-target/
 
