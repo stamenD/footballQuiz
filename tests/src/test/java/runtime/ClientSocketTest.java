@@ -79,17 +79,13 @@ public class ClientSocketTest {
 
     @Test
     public void testToConnect() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessage("dummy massage").trim().contains("Please set your nickname to continue!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessage("dummy massage").trim().contains("Please set your nickname to continue!")));
         runClient(clientThread);
     }
 
     @Test
     public void testToSetNickname() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessage("nickname az").trim().contains("You set nickname successful!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessage("nickname az").trim().contains("You set nickname successful!")));
         runClient(clientThread);
     }
 
@@ -104,13 +100,11 @@ public class ClientSocketTest {
 
     @Test
     public void testToSetNicknameSecondTime() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessage("nickname az" +
-                                           System.lineSeparator() +
-                                           "nickname ti").trim().contains("You set nickname successful!"
-                                                                                  + System.lineSeparator() +
-                                                                                  "You already have a nickname."));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessage("nickname az" +
+                                                                                    System.lineSeparator() +
+                                                                                    "nickname ti").trim().contains("You set nickname successful!"
+                                                                                                                           + System.lineSeparator() +
+                                                                                                                           "You already have a nickname.")));
         runClient(clientThread);
     }
 
@@ -132,22 +126,18 @@ public class ClientSocketTest {
 
     @Test
     public void testToSetUsedNickname() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessageFromTwoChannels("nickname az", "nickname az").trim().contains("This username is already used!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessageFromTwoChannels("nickname az", "nickname az").trim().contains("This username is already used!")));
         runClient(clientThread);
 
     }
 
     @Test
     public void testToCreateGameRoom() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessage("nickname az" +
-                                           System.lineSeparator() +
-                                           "create-game 1").trim().contains("You set nickname successful!"
-                                                                                    + System.lineSeparator() +
-                                                                                    "Successful create room!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessage("nickname az" +
+                                                                                    System.lineSeparator() +
+                                                                                    "create-game 1").trim().contains("You set nickname successful!"
+                                                                                                                             + System.lineSeparator() +
+                                                                                                                             "Successful create room!")));
         runClient(clientThread);
     }
 
@@ -170,73 +160,61 @@ public class ClientSocketTest {
 
     @Test
     public void testToCreateRoomWithUsedName() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessageFromTwoChannels("nickname az" +
-                                                          System.lineSeparator() +
-                                                          "create-game 1", "nickname ti" +
-                                                          System.lineSeparator() +
-                                                          "create-game 1").trim().contains("This room is already created!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessageFromTwoChannels("nickname az" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "create-game 1", "nickname ti" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "create-game 1").trim().contains("This room is already created!")));
         runClient(clientThread);
 
     }
 
     @Test
     public void testToListCurrentGames() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessageFromTwoChannels("nickname az" +
-                                                          System.lineSeparator() +
-                                                          "create-game 1", "nickname ti" +
-                                                          System.lineSeparator() +
-                                                          "list-rooms").trim().contains("| NAME | CREATOR | ISFREE |\n" +
-                                                                                                "|------+---------+--------|\n" +
-                                                                                                "| 1    | az      |   yes  |\n" +
-                                                                                                "|------+---------+--------|"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessageFromTwoChannels("nickname az" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "create-game 1", "nickname ti" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "list-rooms").trim().contains("| NAME | CREATOR | ISFREE |\n" +
+                                                                                                                                         "|------+---------+--------|\n" +
+                                                                                                                                         "| 1    | az      |   yes  |\n" +
+                                                                                                                                         "|------+---------+--------|")));
         runClient(clientThread);
     }
 
     @Test
     public void testToJoinInNotExistingGame() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessage("nickname az" +
-                                           System.lineSeparator() +
-                                           "join-game 1").trim().contains("There is not room with that name!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessage("nickname az" +
+                                                                                    System.lineSeparator() +
+                                                                                    "join-game 1").trim().contains("There is not room with that name!")));
         runClient(clientThread);
     }
 
     @Test
     public void testToJoinInNotExistingGameRandom() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessage("nickname az" +
-                                           System.lineSeparator() +
-                                           "join-game").trim().contains("There are not free rooms!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessage("nickname az" +
+                                                                                    System.lineSeparator() +
+                                                                                    "join-game").trim().contains("There are not free rooms!")));
         runClient(clientThread);
     }
 
     @Test
     public void testToJoinInGame() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessageFromTwoChannels("nickname az" +
-                                                          System.lineSeparator() +
-                                                          "create-game 1", "nickname ti" +
-                                                          System.lineSeparator() +
-                                                          "join-game 1").trim().contains("Successful join in room!"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessageFromTwoChannels("nickname az" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "create-game 1", "nickname ti" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "join-game 1").trim().contains("Successful join in room!")));
         runClient(clientThread);
     }
 
     @Test
     public void testToStartGame() throws InterruptedException {
-        final Thread clientThread = new Thread(() -> {
-            assertTrue(sendMessageFromTwoChannels("nickname az" +
-                                                          System.lineSeparator() +
-                                                          "create-game 1", "nickname ti" +
-                                                          System.lineSeparator() +
-                                                          "join-game 1").trim().contains("The GAME will start soon! Get ready! :)"));
-        });
+        final Thread clientThread = new Thread(() -> assertTrue(sendMessageFromTwoChannels("nickname az" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "create-game 1", "nickname ti" +
+                                                                                                   System.lineSeparator() +
+                                                                                                   "join-game 1").trim().contains("The GAME will start soon! Get ready! :)")));
         runClient(clientThread);
     }
 }

@@ -75,7 +75,7 @@ public class ServerExecutorCommand {
             final String[] cmdParts,
             final Map<SocketChannel, Player> onlineUsers,
             final SocketChannel caller) {
-        String answer = null;
+        String answer;
         if (onlineUsers.get(caller).getUsername() == null) {
             if (cmdParts[1].length() < Player.LENGTH_NAME) {
                 if (onlineUsers.values().stream()
@@ -102,7 +102,7 @@ public class ServerExecutorCommand {
             final Map<SocketChannel, Player> onlineUsers,
             final SocketChannel caller,
             final Map<String, Game> games) {
-        String answer = null;
+        String answer;
         if (cmdParts[1].length() < Game.LENGTH_NAME) {
             if (games.values().stream()
                     .anyMatch(game -> game.getNameRoom().equals(cmdParts[1]))) {

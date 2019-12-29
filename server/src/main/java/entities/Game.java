@@ -38,6 +38,7 @@ public class Game {
     private volatile int index;
     private boolean isFinished;
     private boolean isOpenToGetAnswers;
+
     public Game(final String nameRoom, final int timeForThinking, final Player firstPlayer, final IOFileService recorder) {
         this.timeForThinking = timeForThinking;
         this.recorder = recorder;

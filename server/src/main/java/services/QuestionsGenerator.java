@@ -24,7 +24,7 @@ public class QuestionsGenerator {
 
     public static FootballPlayer fetchPlayer(final String json, final int number) {
         //System.out.println(json);
-        final Pattern pattern = Pattern.compile("\\[.*\\]");
+        final Pattern pattern = Pattern.compile("\\[.*]");
         final Matcher matcher = pattern.matcher(json);
         String scorers = "";
         while (matcher.find()) {
@@ -181,9 +181,7 @@ public class QuestionsGenerator {
                             questions.add(QuestionsGenerator.questionForLeagueScorers(resp, leagueSecondQuestion.name));
                             return resp;
                         })
-                        .thenAccept(resp -> {
-                            questions.add(QuestionsGenerator.questionForPlayersGoalsNumber(resp, leagueSecondQuestion.name, -1));
-                        });
+                        .thenAccept(resp -> questions.add(QuestionsGenerator.questionForPlayersGoalsNumber(resp, leagueSecondQuestion.name, -1)));
 
         CompletableFuture.allOf(questionsPartOne, questionsPartTwo).whenCompleteAsync((s, throwable) -> {
             if (throwable != null) {
